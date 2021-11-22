@@ -15,7 +15,7 @@ Email:cxw19@mails.tsinghua.edu.cn
 date:2021/3/9 08:49
 """
 import math
-from Config import *
+from ORCSRS.Config import *
 
 time_load_or_unload = 1.2
 time_pick_up = [5, 15]
@@ -36,9 +36,9 @@ class PSBDemo:
     PSB parameters of velocity, weight, ... in WhaleHouse.
 
     Transport procedure:
-        1. Receive PMS command, go to the Retrieval place.
+        1. Receive PMS command, go to the Retrieval target_xyz.
         2. Down to the designated height, seize the bin.
-        3. Up to primal place.
+        3. Up to primal target_xyz.
         4. get bin to the workstation.
         5. Down to the designated height and back up.
 
@@ -137,7 +137,7 @@ class StackDemo:
 
 class Warehouse:
     """
-    Define a Warehouse class to get an available place and to save parameters of warehouse configuration.
+    Define a Warehouse class to get an available target_xyz and to save parameters of warehouse configuration.
     """
     # num_of_cols = 10
     # stacks_of_one_col = 50

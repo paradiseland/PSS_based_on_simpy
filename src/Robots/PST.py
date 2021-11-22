@@ -108,7 +108,7 @@ class PST:
     def take_psb2line(self, x):
         return self.go_to_horizontally(x, is_loaded=True)
 
-    def bind(self, order: 'Order'):
+    def bind(self, order: 'OrderEntry'):
         order.bind(self)
         self.cur_order = order
 

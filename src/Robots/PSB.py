@@ -7,20 +7,17 @@ Email:cxw19@mails.tsinghua.edu.cn
 date:2021/6/8 12:54
 """
 import copy
-import logging
 from functools import lru_cache
 from typing import Optional, Tuple, Union, Any
 
-import numpy as np
-
+from ORCSRS.Config import *
 from ORCSRS.PSSTechInfo import PSBDemo, inertial_force_coefficient, gravity_coefficient, friction_coefficient, eta, Bin_weight, StackDemo, time_load_or_unload
 from Warehouse.Stocks import Stocks
-from ORCSRS.Config import *
-
 
 # F_c = G/g•a•f_r + G•c_r
 # P_c = F_c • max_h_velocity / (1000 * eta)
 logger = logging.getLogger(__name__)
+
 
 @lru_cache(10)
 def power_of_horizontal_acceleration_unloaded(v_top):
@@ -60,7 +57,7 @@ def power_of_vertical_acceleration_unloaded(v_top) -> float:
 @lru_cache(10)
 def power_of_vertical_acceleration_loaded(v_top) -> float:
     return ((PSBDemo.weight + Bin_weight) * PSBDemo.acc_v_unloaded * inertial_force_coefficient + (PSBDemo.weight + Bin_weight) * gravity_coefficient * friction_coefficient) * v_top / (
-                1000 * eta)  # 0.77904
+            1000 * eta)  # 0.77904
 
 
 @lru_cache(10)
@@ -71,7 +68,7 @@ def power_of_vertical_deceleration_unloaded(v_top) -> float:
 @lru_cache(10)
 def power_of_vertical_deceleration_loaded(v_top) -> float:
     return ((PSBDemo.weight + Bin_weight) * PSBDemo.acc_v_unloaded * inertial_force_coefficient + (PSBDemo.weight + Bin_weight) * gravity_coefficient * friction_coefficient) * v_top / (
-                1000 * eta)  # 0.77904
+            1000 * eta)  # 0.77904
 
 
 @lru_cache(10)
@@ -103,7 +100,7 @@ class PSB:
         self.total_work_time: float = 0.0
         self.working_time = 0
         self.reshuffle_task = []  # 这个返回的任务应该绑定工作台而不是绑定psb
-        self.cur_order: Optional['Order'] = None
+        self.cur_order: Optional['OrderEntry'] = None
         self.fleet: Optional['Fleet'] = None
 
     @property
@@ -112,7 +109,7 @@ class PSB:
 
     @place.setter
     def place(self, p):
-        if p[1] < -1 or p[1] > STACKS_OF_ONE_COL :
+        if p[1] < -1 or p[1] > STACKS_OF_ONE_COL:
             logger.error(f"{p}, PSB位置设定有误")
         elif not isinstance(p, tuple):
             logger.error(f"位置变更输入非元组")
@@ -138,9 +135,9 @@ class PSB:
 
     def go_to_horizontally(self, target: Tuple[int, int], is_loaded=False) -> Union[float, Any]:
         """
-        compute the time consumption from current place to target place.
+        compute the time consumption from current target_xyz to target target_xyz.
         ---------------
-        :param target: current place -> target place: (x, y) coordinates of the stack place. x in width and y in length.
+        :param target: current target_xyz -> target target_xyz: (x, y) coordinates of the stack target_xyz. x in width and y in length.
         :param is_loaded: whether carrying load or not
         :return 返回水平方向前往目的地的时间
         """
@@ -216,7 +213,7 @@ class PSB:
     def reshuffle_bin_to_destination(self, pre_y, pre_tier, new_y, new_tier):
         """
         transport the blocking bins to peek of adjacent stack.
-        the current place of PSB doesn't change
+        the current target_xyz of PSB doesn't change
         同一个轨道中的翻箱任务, 起点终点均为原始点, Warning:[会回到起始点]
           → → → → → → → → → → → → → → →
           ↑ ← ← ← ← ← ← ← ← ← ← ← ← ↑ ↓
@@ -246,7 +243,7 @@ class PSB:
         """
         x, y = xy
         down_and_up_to_peek = self.get_vertical_transport_time_JC(tier, drop_off=False)
-        warehouse.stocks.R(x, y, int(warehouse.stocks.s[x, y].sum() - 1))
+        warehouse.stocks.R(x, y, np.count_nonzero(warehouse.stocks.s[x, y]) - 1)
         stack2workstation_horizontally = self.get_horizontal_transport_time_and_ec(y * StackDemo.length)[-1]
         drop_off_up = self.get_vertical_transport_time_JC(tier, drop_off=True)
         total_time = down_and_up_to_peek + stack2workstation_horizontally + drop_off_up + time_load_or_unload * 2  # t_lu: time of loading or unloading
@@ -265,7 +262,7 @@ class PSB:
     def get_bin_with_immediate_return(self, warehouse, xy, stack_tier):
         """
         immediate return
-        reshuffle -> target bin go to temporarily place -> return blocking bins -> go to workstation.
+        reshuffle -> target bin go to temporarily target_xyz -> return blocking bins -> go to workstation.
         """
         pass
 
@@ -283,7 +280,7 @@ class PSB:
     def get_bin_with_delayed_return(self):
         pass
 
-    def reshuffle_blocking_bin(self, warehouse: 'PSS', xy: tuple, tier: int):
+    def reshuffle_blocking_bin(self, warehouse: 'PSS', xy: tuple, tier: int, sku_id):
         """
         by reshuffle the bin of certain stack, get the target bin blocking by other bins.
         """
@@ -291,33 +288,35 @@ class PSB:
         this_stack: np.ndarray = warehouse.stocks.s[x, y].view()
         adjacent_stacks = [n for m in [(y + i, y - i) for i in range(1, STACKS_OF_ONE_COL)] for n in m if
                            0 <= n < STACKS_OF_ONE_COL]  # and warehouse.stocks.sync_[x, n] 此处修改的原因是，作为离散事件中的一个点，同步表是否变多没关系，只要真实表可用就行
-        adjacent_place_chosen = 0  # start place of blocking bins in sequence
+        adjacent_place_chosen = 0  # start target_xyz of blocking bins in sequence
         time_of_reshuffle_blocking_bins = 0
         next_stack: np.ndarray = warehouse.stocks.s[x, adjacent_stacks[adjacent_place_chosen]].view()
-        while this_stack.sum() > tier + 1:
-            cur_bin = int(this_stack.sum() - 1)
-            next_bin = next_stack.sum()
-            if next_bin < NUM_OF_TIERS-1:
+        while np.count_nonzero(this_stack) > tier + 1:
+            cur_bin = int(np.count_nonzero(this_stack) - 1)
+            next_bin = np.count_nonzero(next_stack)
+            if next_bin < NUM_OF_TIERS - 1:
                 # self.register_reshuffle(adjacent_stacks[adjacent_placDe_chosen])
                 time_of_reshuffle_blocking_bins += self.reshuffle_bin_to_destination(
                         y, cur_bin, adjacent_stacks[adjacent_place_chosen], next_bin)
                 try:
+                    reshuffled_sku_id = this_stack[cur_bin]
                     warehouse.stocks.R(x, y, cur_bin, is_R=False)
-                    warehouse.stocks.S(x, adjacent_stacks[adjacent_place_chosen], next_bin, is_S=False)
+                    warehouse.stocks.S(x, adjacent_stacks[adjacent_place_chosen], reshuffled_sku_id, next_bin, is_S=False)
                 except AssertionError:
                     print("出入库失败")
-            if next_stack.sum() >= NUM_OF_TIERS - 1:
+            if np.count_nonzero(next_stack) >= NUM_OF_TIERS - 1:
                 adjacent_place_chosen += 1
                 next_stack = warehouse.stocks.s[x, adjacent_stacks[adjacent_place_chosen]].view()
         return adjacent_stacks[adjacent_place_chosen], time_of_reshuffle_blocking_bins
 
     def store(self, target: tuple, warehouse: 'PSS') -> float:
-        # down -> up -> storage place -> down -> up
+        # down -> up -> storage target_xyz -> down -> up
         x, y = target
-        down_up_to_peek = self.get_vertical_transport_time_JC(NUM_OF_TIERS, drop_off=False)
+        tier = np.count_nonzero(warehouse.stocks.s[x, y])
+        down_up_to_peek = self.get_vertical_transport_time_JC(tier, drop_off=False)
         time_wk2storage = self.go_to_horizontally((x, y), True)
         stack = warehouse.stocks.s[x, y]
-        drop_off_up = self.get_vertical_transport_time_JC(stack.sum() - 1, drop_off=True)
+        drop_off_up = self.get_vertical_transport_time_JC(np.count_nonzero(stack), drop_off=True)
         total_time = down_up_to_peek + time_wk2storage + drop_off_up + time_load_or_unload * 2
         return total_time
 
@@ -418,7 +417,6 @@ class PSB:
 
     def __str__(self) -> str:
         return f"PSB-{self.ID}:{'idle' if self.idle else 'busy'} line[{self.line}], {self.place}."
-
 
 
 if __name__ == '__main__':

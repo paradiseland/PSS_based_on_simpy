@@ -6,13 +6,16 @@ Author: Xingwei Chen
 Email:cxw19@mails.tsinghua.edu.cn
 date:2021/6/7 14:27
 """
-import logging
 from typing import Tuple
 
-import numpy as np
-from Config import *
+import pandas as pd
+
+from ORCSRS.Config import *
+from Strategy.Storage import StoragePolicy
 
 np.random.seed(42)
+
+
 class StackError(BaseException):
     pass
 
@@ -22,48 +25,36 @@ class Stocks:
     用来存储仓库内的库存信息，采用numpy.ndarray实现
     """
 
-    def __init__(self, shape: Tuple[int, int, int], rate):
+    def __init__(self, shape: Tuple[int, int, int], env):
         """基于numpy.ndarray来参数化生成仓库库存
         ---------------------------------------------------
-        其中数字代表货物编码, 当前仅存在1一种货物, 0表示该位置为空
-        :param shape: 仓库形状
-        width: 几列轨道, length: 每列轨道的堆塔数量, height: 每个堆塔的可堆放层数
-        :param rate: 仓库现有货物比率
+        其中数字代表货物编码, 0表示该位置为空
+        :param shape: 仓库形状. width: 几列轨道, length: 每列轨道的堆塔数量, height: 每个堆塔的可堆放层数
         """
         self.shape = shape
+        self.env = env
         self.total_place = np.prod(shape)
         self.s: np.ndarray = np.zeros(shape, dtype=np.uint8)
         # 为每个堆塔提供一个锁, 一般锁位于每个堆塔顶层货物的下一层, 但当顶层被确定出入货时, 锁在顶层+1层
         self.sync_ = np.ones(shape[:2], dtype=np.bool)
-        self.initialize(rate)
+        self.storage_policy = StoragePolicy(store_policy, self)
         logging.info(f"Stocks initializing...\nshape:{self.shape}, occupied rate: {self.s_rate:.2%}, avail stacks:{np.sum(self.sync_)}\nStocks details (2d gridview):\n{self.s_2d}")
 
-    def initialize(self, rate):
-        """
-        随机初始化库存信息
-        :param rate: 库存占用率
-        """
-        rand_int = np.random.normal(loc=rate * self.shape[2], scale=2, size=self.shape[:2]).astype(np.uint8)
-        rand_int[rand_int > self.shape[2]] = self.shape[2]
-        for i in range(self.shape[0]):
-            for j in range(self.shape[1]):
-                self.s[i, j][:rand_int[i, j]] = 1
-
     @property
-    def s_2d(self):
-        return self.s.sum(axis=2, dtype=np.uint8)
-
-
+    def s_2d(self) -> np.ndarray:
+        return np.count_nonzero(self.s, axis=2)
 
     @property
     def s_1d(self) -> np.ndarray:
-        return self.s.sum(axis=2, dtype=np.uint16).sum(axis=1)
+        return self.s_2d.sum(axis=1)
 
-
+    @property
+    def value_counts(self):
+        return pd.Series(self.s.ravel()[1:]).value_counts().sort_index()[1:].to_numpy()
 
     @property
     def s_rate(self):
-        return self.s.sum() / self.total_place
+        return np.count_nonzero(self.s) / self.total_place
 
     @property
     def s_state(self):
@@ -71,13 +62,12 @@ class Stocks:
         呈现库存锁定状况
         :return: 返回所有的锁定位置以及锁定堆塔数量
         """
-        locked = np.argwhere(self.s_2d != self.s_2d_sync)
+        locked = np.argwhere(self.s_2d != self.sync_)
         return locked, locked.shape[0]
 
-    def rand_S_place(self, psb_idle=None) -> Tuple[int, int, int]:
+    def rand_S_place(self) -> Tuple[int, int, int]:
         """
         随机一个
-        :param psb_idle: psb车队的空闲情况
         :return: 返回 (x, y)
         """
         # avail_xys = np.argwhere((self.s_2d < Warehouse.num_of_tiers - 1) & (self.s_2d == self.s_2d_sync))
@@ -131,47 +121,37 @@ class Stocks:
         z = np.random.randint(self.s_2d[x, y])
         return x, y, z
 
-    def S(self, x, y, z=None, is_S=True):
+    def S(self, x, y, sku_id, z=None, is_S=True):
         """
         判断合理性, 入库修改库存
+        :param x
+        :param y
+        :param sku_id: sku id that stored before
+        :param z: tier of a storage place, always omitted
+        :param is_S: is a storage action, it will be a reshuffling action.
         """
-        if z is None:
-            z = self.s[x, y].sum()
-        # try:
-        #     assert z == 0 or (self.s[x, y][:z] == 1).all(), "堆塔入库位置下层非全部有货"
-        #     assert (self.s[x, y][z:] == 0).all(), "堆塔入库位置上层非空"
-        #     assert 0 <= x < Warehouse.num_of_cols
-        #     assert 0 <= y < Warehouse.stacks_of_one_col
-        #     assert 0 <= z < Warehouse.num_of_tiers - 1
-        # except AssertionError:
-        #     raise StackError(f"堆塔发生错误\n此时堆塔库存信息: {self.s[x, y]}\n存货位置: ({x}, {y}, {z})")
-        # else:
-        #     self.s[x, y, z] = 1
-        #     self.sync[x, y] += 1
-        self.s[x, y, z] = 1
-        if is_S:
+        if z is not None:
+            self.s[x, y, z] = sku_id
+        elif z is None:
+            try:
+                z = np.argwhere(self.s[x, y] == 0)[0, 0]
+                self.s[x, y, z] = sku_id
+            except IndexError:
+                logging.log(60, f"{x, y} is forced 'S' a sku-{sku_id}")
+                self.s[x, y, NUM_OF_TIERS -1] = sku_id
+        if is_S:  # recognize the action is reshuffling or not
             self.sync_[x, y] = True
-        # print(f"Finish-S:{(x, y, z)}, stack: {self.s[x, y]}")
-        # print(f"                     locked: {(x, y)}, {self.sync_[x, y]}")
 
     def R(self, x, y, z=None, is_R=True):
         """
         依据取货位置来进行取货, 判断合理性, 修改库存
-        :param z:
-        :param y:
-        :param x:
-        :param is_R:
+        :param x
+        :param y
+        :param z: tier of a retrieval place, always omitted
+        :param is_R: is a retrieval action, it will be a reshuffling action.
         """
         if z is None:
-            z = int(self.s[x, y].sum() - 1)
-        # try:
-        #     assert (self.s[x, y][:z + 1] == 1).all()
-        #     assert (self.s[x, y][z + 1:] == 0).all()
-        # except AssertionError:
-        #     print(f"堆塔发生错误\n此时堆塔库存信息: {self.s[x, y]}\n取货位置: ({x}, {y}, {z})")
-        #     raise StackError
-        # else:
-        #     self.s[x, y, z] = 0
+            z = int(np.argwhere(self.s[x, y] == 0)[0, 0] - 1)
         self.s[x, y, z] = 0
         if is_R:
             self.sync_[x, y] = True
@@ -181,7 +161,7 @@ class Stocks:
 
 
 if __name__ == '__main__':
-    test = Stocks(shape=(10, 20, 7), rate=0.5)
+    test = Stocks(shape=(10, 40, 8))
     s = test.rand_S_place()
     r = test.rand_R_place()
     rr = test.rand_R_x()

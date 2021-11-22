@@ -9,7 +9,7 @@ date:2021/10/19 19:42
 import matplotlib.pyplot as plt
 import numpy as np
 
-from Config import without_change_track_log_file_path, change_track_log_file_path
+from ORCSRS.Config import without_change_track_log_file_path, change_track_log_file_path
 
 
 def read_log(file_path):
