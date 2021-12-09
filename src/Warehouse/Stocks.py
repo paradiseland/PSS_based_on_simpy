@@ -11,6 +11,7 @@ from typing import Tuple
 import pandas as pd
 
 from ORCSRS.Config import *
+from util.run import timeit
 from Strategy.Storage import StoragePolicy
 
 np.random.seed(42)
@@ -64,6 +65,22 @@ class Stocks:
         """
         locked = np.argwhere(self.s_2d != self.sync_)
         return locked, locked.shape[0]
+
+    @timeit
+    def tier_x(self, z):
+        """
+        从俯视图角度，给出顶层sku内容
+        :param z:
+        :return: 二维
+        """
+        non_zero_xyz = np.asarray(self.s.nonzero()).T
+        res = np.zeros((NUM_OF_COLS, STACKS_OF_ONE_COL), dtype=np.int)
+        for x in range(NUM_OF_COLS):
+            for y in range(STACKS_OF_ONE_COL):
+                non_zero = np.nonzero(self.s[x][y])[0]
+                sku_id = self.s[x, y, non_zero[z-1]] if non_zero.size > z+1 else 0
+                res[x, y] = sku_id
+        return res
 
     def rand_S_place(self) -> Tuple[int, int, int]:
         """
@@ -138,7 +155,7 @@ class Stocks:
                 self.s[x, y, z] = sku_id
             except IndexError:
                 logging.log(60, f"{x, y} is forced 'S' a sku-{sku_id}")
-                self.s[x, y, NUM_OF_TIERS -1] = sku_id
+                self.s[x, y, NUM_OF_TIERS - 1] = sku_id
         if is_S:  # recognize the action is reshuffling or not
             self.sync_[x, y] = True
 

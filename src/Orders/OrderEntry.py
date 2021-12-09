@@ -70,6 +70,9 @@ class OrderEntry:
     def waiting_time(self):
         return self.start_time - self.arrive_time
 
+    def has_waiting_since(self, time):
+        return int(time - self.arrive_time)
+
     @property
     def executing_time(self):
         return self.end_time - self.start_time

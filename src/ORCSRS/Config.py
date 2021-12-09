@@ -36,66 +36,39 @@ WAREHOUSE_INIT_RATE = 0.5
 AVAIL_PLACE = NUM_OF_COLS * STACKS_OF_ONE_COL * NUM_OF_TIERS
 
 # Robots
-NUM_OF_PSBs = 10
+NUM_OF_PSBs = 5
 NUM_OF_PSTs_left = 2
 NUM_OF_PSTs_right = 1
 NUM_OF_PSTs = NUM_OF_PSTs_left + NUM_OF_PSTs_right
-PSTs_left = [{'ID': i, 'init_line': interval[0], 'interval': interval, 'side': True} for i,  interval in
+PSTs_left = [{'ID': i, 'init_line': interval[0], 'interval': interval, 'side': True} for i, interval in
              zip(range(NUM_OF_PSTs_left), np.array_split(np.arange(NUM_OF_COLS), NUM_OF_PSTs_left))]
 PSTs_right = [{'ID': NUM_OF_PSTs_left, 'init_line': interval[0], 'interval': interval, 'side': False} for i, interval in
               zip(range(NUM_OF_PSTs_right), np.array_split(np.arange(NUM_OF_COLS), NUM_OF_PSTs_right))]
 
 # Orders
 NUM_OF_SKU = 15
+stock_threshold = 10
 # weight
 w_up = 15
 w_low = 0
 
-
-
 # Write
-write_in = False  # write in Result.csv
-log_level = 10  # print log content to console
+write_in = True  # write in Result.csv
+log_level = 50  # print log content to console
 # Storage policy
 # store_policy = 'determined'
-# store_policy = 'zoned'
-store_policy = 'random'
-
-
+store_policy = 'zoned'
+# store_policy = 'random'
 
 result_cols = [
-    'sim time',
-    'N_{sku}',
-    'sku strategy',
-    'storage policy',
-    'lambda',
-    'shape',
-    'N_{stack}',
-    'N_{BP}',
-    'N_{TC}',
-    'R_{lock}',
-    'T_w(s)',
-    'T_s(s)',
-    'RECO(kJ)',
-    'TREC(kJ)',
-    'SCEO(kJ)',
-    'TSEC(kJ)',
-    'TEC(kJ)',
-    'U_{BP}',
-    'U_{TC}',
-    'MR_{per}',
-    'MRTiers',
-    'Finish rate(R)',
-    'Finish rate(S)',
-    'stocks rate',
-    'lock rate',
-    'BP utility',
-    'TC utility',
-    'R jobs',
-    'S jobs',
-    'Reshuffle time part',
-    'queue length'
+    'sim time', 'N_{sku}', 'sku strategy', 'storage policy', 'lambda', 'shape', 'N_{stack}', 'N_{BP}', 'N_{TC}', 'R_{lock}', 'T_w(s)', 'T_s(s)', 'RECO(kJ)', 'TREC(kJ)', 'SCEO(kJ)', 'TSEC(kJ)', 'TEC(kJ)', 'U_{BP}', 'U_{TC}', 'MR_{per}', 'MRTiers', 'Finish rate(R)', 'Finish rate(S)', 'stocks rate', 'lock rate', 'BP utility', 'TC utility', 'R jobs', 'S jobs', 'Reshuffle time part', 'queue length'
 ]
 
+# RL
+# order pool refresh time
+RL_embedded = False
+order_pool_time_interval = 3600  # s
+order_pool_size = 100
 
+NUM_OF_SCHEDULING_STRATEGIES = 5
 

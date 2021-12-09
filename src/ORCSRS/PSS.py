@@ -11,11 +11,13 @@ import time
 from typing import List, Generator, Any, Dict
 
 import pandas as pd
+import torch
 from scipy import stats
 from scipy.stats.stats import DescribeResult
 from simpy import Timeout, Environment, Resource
 
 from ORCSRS.Config import *
+from ORCSRS.ORSRSRL import RL
 from Orders import OrderEntry
 from Orders.OrderEntry import InboundOrderEntry, OutboundOrderEntry
 from Robots.Fleet import Fleet, Fleet_PST
@@ -74,22 +76,25 @@ class PSS(Environment):
     def __init__(self):
         logging.info("PSS Environment initializing......")
         super().__init__()
-        self.BP_fleet: Fleet = Fleet(self, NUM_OF_PSBs)  # psb 多机器人 + 3 psts
+        self.BP_fleet: Fleet = Fleet(self, NUM_OF_PSBs)  # bp 多机器人 + 3 psts
         self.TC_fleet: Fleet_PST = Fleet_PST(self, PSTs_left + PSTs_right)  # pst 多机器人
         self.work_stations: List[WorkStation] = [WorkStation(self) for _ in range(NUM_OF_COLS)]
         self.stocks: Stocks = Stocks((NUM_OF_COLS, STACKS_OF_ONE_COL, NUM_OF_TIERS), self)
-
         self.arrive_order_index, self.finish_order_index, self.order_record = self.order_records_init()
         self.EC = Energy(NUM_OF_PSBs, NUM_OF_PSTs)  # 一个记录能耗信息的类
         self.lines = [Resource(self) for _ in range(NUM_OF_COLS)]
+        self.order_pool = OrderPool('FIFO')
         self.strategy = {'Designate' : OrderDesignate('random', self.stocks, self.BP_fleet),
                          'Storage'   : self.stocks.storage_policy,
-                         'Scheduling': SchedulingPolicy()}
-        self.order_pool = OrderPool('FIFO')
+                         'Scheduling': SchedulingPolicy(self)}
+        self.rl = RL(self) if RL_embedded else None
+        self.bp_fleet_activate = self.event()
+        self.avail_bp = self.event().succeed()
+        self.OrderPool_status = self.event()
+        self._BP_status = self.event()
         self.initialize()
         self.order_arrival = {'R': [], 'S': []}
         self.queue = [0, 0]
-        print(self.stocks.value_counts)
 
     def order_records_init(self):
         logging.info(f"Order records pool initializing...\nIncluding arrive orders, finish orders, reshuffle tasks of each col, order details and etc.")
@@ -108,6 +113,8 @@ class PSS(Environment):
         self.process(self.source_retrieval())
         self.process(self.source_storage())
         # self.process(self.batch_release())  # TODO:  订单池释放订单给机器人
+        if self.rl:
+            self.process(self.source_order_release())
 
     def print_stats(self):
         """
@@ -123,7 +130,7 @@ class PSS(Environment):
                     , f"Current stocks status: stocks_rate: {self.stocks.s_rate:.2%}, lock_rate: {1 - self.stocks.sync_.mean():.2%}")
         logging.log(60
                     ,
-                    f"Robots utility\n{[f'{psb.name}:{psb.working_time / SIM_ELAPSE:.2%}' for psb in self.BP_fleet.all_PSBs]}\n{[f'{pst.name}:{pst.working_time / SIM_ELAPSE:.2%}' for pst in self.TC_fleet.all_PSTs]}")
+                    f"Robots utility\n{[f'{bp.name}:{bp.working_time / SIM_ELAPSE:.2%}' for bp in self.BP_fleet.all_PSBs]}\n{[f'{pst.name}:{pst.working_time / SIM_ELAPSE:.2%}' for pst in self.TC_fleet.all_PSTs]}")
         logging.log(60
                     ,
                     f"Energy Consumption ↓ \nR-jobs: {EC_R.nobs},  avg: {EC_R.mean:.2f} KJ,  min: {EC_R.minmax[0]:<4.2f} KJ, max: {EC_R.minmax[1]:<5.2f} KJ, var: {EC_R.variance:.2f} KJ^2, total: {np.sum(self.EC.R_ndarray):.2f} KJ")
@@ -164,7 +171,7 @@ class PSS(Environment):
         result['SCEO(kJ)'] = f'{EC_S.mean:.2f}'
         result['TSEC(kJ)'] = f'{np.sum(self.EC.S_ndarray):.2f}'
         result['TEC(kJ)'] = f'{np.sum(self.EC.R_ndarray) + np.sum(self.EC.S_ndarray):.2f}'
-        result['U_{BP}'] = f'{sum([psb.working_time / SIM_ELAPSE for psb in self.BP_fleet.all_PSBs]) / NUM_OF_PSBs: .2%}'
+        result['U_{BP}'] = f'{sum([bp.working_time / SIM_ELAPSE for bp in self.BP_fleet.all_PSBs]) / NUM_OF_PSBs: .2%}'
         result['U_{TC}'] = f'{sum([pst.working_time / SIM_ELAPSE for pst in self.TC_fleet.all_PSTs]) / NUM_OF_PSTs: .2%}'
         result['MR_{per}'] = f"{sum([o.reshuffle > 0 for o in self.order_record['R'].values()]) / self.arrive_order_index['R']:.2%}"
         result['MRTiers'] = f"{np.asarray([o.reshuffle for o in self.order_record['R'].values() if o.reshuffle > 0]).mean():.2f}"
@@ -172,7 +179,7 @@ class PSS(Environment):
         result['Finish rate(S)'] = f'{len(self.finish_order_index[InboundOrderEntry.type_]) / self.arrive_order_index[InboundOrderEntry.type_]:.2%}'
         result['stocks rate'] = f'{self.stocks.s_rate:.2%}'
         result['lock rate'] = f'{1 - self.stocks.sync_.mean():.2%}'
-        result['BP utility'] = f"{[f'{psb.name}:{psb.working_time / SIM_ELAPSE:.2%}' for psb in self.BP_fleet.all_PSBs]}"
+        result['BP utility'] = f"{[f'{bp.name}:{bp.working_time / SIM_ELAPSE:.2%}' for bp in self.BP_fleet.all_PSBs]}"
         result['TC utility'] = f"{[f'{pst.name}:{pst.working_time / SIM_ELAPSE:.2%}' for pst in self.TC_fleet.all_PSTs]}"
         result['R jobs'] = EC_R.nobs
         result['S jobs'] = EC_S.nobs
@@ -183,16 +190,68 @@ class PSS(Environment):
             df.to_csv(result_csv, mode='a', header=False, index=False)
 
     def print_cur_status(self):
-        logging.info(f'Sim time: {self.now:>10.2f}, PSB: {[str(psb) for psb in self.BP_fleet.all_PSBs]}')
+        logging.info(f'Sim time: {self.now:>10.2f}, PSB: {[str(bp) for bp in self.BP_fleet.all_PSBs]}')
 
     @property
     def reshuffle_task(self):
         return pd.Series([ro.reshuffle for ro in self.order_record['R'].values()])
 
-    def robots_find_order(self):
-        # 改为车找订单
+    def OrderPool_update(self):
+        self.OrderPool_status.succeed()
+        self.OrderPool_status = self.event()
 
-        pass
+    @property
+    def BP_status(self):
+        if len(self.BP_fleet) > 0:
+            return self.event().succeed()
+        else:
+            return self._BP_status
+
+    @property
+    def state(self):
+        """
+        返回当前仿真环境内的状态信息, 并转为tensor
+        订单信息记录为 (sku_id, 1 为入库单 2为出库单,waiting time)
+        :return:
+        """
+        BP_state = np.zeros(NUM_OF_COLS, dtype=np.int)
+        TC_state = np.zeros((2, NUM_OF_COLS), dtype=np.int)
+        for x in self.BP_fleet.at_lines.values():
+            BP_state[x] = 1
+        for x in self.TC_fleet.at_lines.values():
+            TC_state[int(x[1]), x[0]] = 1
+
+        tmp = int(STACKS_OF_ONE_COL - order_pool_size / NUM_OF_COLS * 3 - 3)
+        tmp = 1
+        fleet_state = np.pad(np.hstack([BP_state.reshape(-1, 1), TC_state.T]), ((0, 0), (0, 1)), constant_values=(0, 0))
+        orders = np.asarray([(o.sku_id, int(o.type_ == OutboundOrderEntry.type_) + 1, o.has_waiting_since(self.now)) for o in self.order_pool.foreXorders(order_pool_size, self.now)])
+        orders = orders.reshape(
+                (NUM_OF_COLS, int(order_pool_size / NUM_OF_COLS * 3)))
+        stocks = self.stocks.s.transpose(2, 0, 1)
+        state = np.hstack([np.hstack([fleet_state, orders]), np.hstack(stocks)])
+        return torch.from_numpy(state.astype(np.float32))
+
+    def source_order_release(self):
+        """
+        将到达订单生成至订单池，每过3s循环一个鉴别小车的订单
+        per 3 seconds, we check  whether the order pool has an order task.
+
+        :return:
+        """
+        logging.log(40, f"{1}")
+        while True:
+            # 接收出入库完成任务事件, 来与车辆指派process相交互，一旦有完成订单，将会来实施一次订单绑定小车，下方流程
+            # 一g旦有车被R释放+订单池内有订单，将会进入该流程
+            yield self.BP_status | self.bp_fleet_activate
+            yield self.OrderPool_status
+            bp = yield self.BP_fleet.get_bp()
+            order_name, order_entry, target_place = self.strategy['Scheduling'].select_order_for_bp_1(bp)
+            logging.log(10, f"{self.now: .3f}, BP{bp.ID} is bound to Order[{order_name}]")
+            order = self.retrieve(int(order_name[1:]), sku_id=order_entry.sku_id, bp=bp, order_entry=order_entry, target=target_place) \
+                if order_entry.type_ == OutboundOrderEntry.type_ \
+                else self.storage(int(order_name[1:]), sku_id=order_entry.sku_id, bp=bp, order_entry=order_entry, target=target_place)  # 若是入库订单，则采用原先的默认随机方法
+            self.process(order)
+            logging.log(10, self.stocks.value_counts)
 
     def source_retrieval(self):
         """
@@ -202,8 +261,14 @@ class PSS(Environment):
             self.arrive_order_index[OutboundOrderEntry.type_] += 1
             time_interval_of_order_arrive: float = random.expovariate(ARRIVAL_RATE)
             yield self.timeout(time_interval_of_order_arrive)
-            outbound_order: Generator[Timeout, Any, Any] = self.retrieve(self.arrive_order_index[OutboundOrderEntry.type_])
-            self.process(outbound_order)
+            sku_id = self.strategy['Storage'].order_arrive() if NUM_OF_SKU > 1 else 1
+            if self.rl:
+                outbound_order = OutboundOrderEntry(f'{OutboundOrderEntry.type_}{self.arrive_order_index[OutboundOrderEntry.type_]}', sku_id=sku_id, arrive_time=self.now)
+                self.order_pool.append(outbound_order)
+                self.OrderPool_update()
+            else:
+                outbound_order: Generator[Timeout, Any, Any] = self.retrieve(self.arrive_order_index[OutboundOrderEntry.type_], sku_id)
+                self.process(outbound_order)
 
     def source_storage(self):
         """
@@ -213,90 +278,100 @@ class PSS(Environment):
             self.arrive_order_index[InboundOrderEntry.type_] += 1
             time_interval_of_order_arrive: float = random.expovariate(ARRIVAL_RATE)
             yield self.timeout(time_interval_of_order_arrive)
-            inbound_order: Generator[Timeout, Any, Any] = self.storage(self.arrive_order_index[InboundOrderEntry.type_])
-            logging.info(f"{self.now:>10.2f}, S-{self.arrive_order_index[InboundOrderEntry.type_]} arrived.")
-            self.process(inbound_order)
+            sku_id = self.strategy['Storage'].order_arrive(inbound=True) if NUM_OF_SKU > 1 else 1
+            if self.rl:
+                inbound_order = InboundOrderEntry(f"{InboundOrderEntry.type_}{self.arrive_order_index[InboundOrderEntry.type_]}", sku_id=sku_id, arrive_time=self.now)
+                self.order_pool.append(inbound_order)
+                self.OrderPool_update()
+            else:
+                inbound_order: Generator[Timeout, Any, Any] = self.storage(self.arrive_order_index[InboundOrderEntry.type_], sku_id)
+                logging.info(f"{self.now:>10.2f}, S-{self.arrive_order_index[InboundOrderEntry.type_]} arrived.")
+                self.process(inbound_order)
 
-    def retrieve(self, outbound_order_idx):
+    def retrieve(self, outbound_order_idx, sku_id, **kwargs):
         """
         A generator representing the procedure of outbound task.
+        :param sku_id: 产生订单时是否给出id号
         :param outbound_order_idx:R 该出库订单编号
         """
         # 一个取货流程一旦下发后，仅在请求有限资源时会发生离散事件点
-        psb: PSB
-        pst: PST
-        stock_info = pd.Series(self.stocks.s.ravel()[1:]).value_counts().sort_index()[1:].to_numpy()
-        if np.any(stock_info < 1):
-            raise ValueError("sku为0")
-        logging.debug(f"Filter Store queue: {len(self.BP_fleet.get_queue)}")
+        bp: PSB
+        tc: PST
         self.queue[0] += 1
         self.queue[1] += len(self.BP_fleet.get_queue)
+        stock_info = pd.Series(self.stocks.s.ravel()[1:]).value_counts().sort_index()[1:].to_numpy()
+        logging.debug(f"Filter Store queue: {len(self.BP_fleet.get_queue)}")
         logging.debug(f"sku:{stock_info}")
         logging.debug(f"堆塔锁定数{(~self.stocks.sync_).sum()}")
-        outbound_order_name = f"{OutboundOrderEntry.type_}{outbound_order_idx}"
-        sku_id = self.strategy['Storage'].order_arrive() if NUM_OF_SKU > 1 else 1
-        o = OutboundOrderEntry(name=outbound_order_name, sku_id=sku_id, arrive_time=self.now)
-        # x = self.stocks.rand_R_x()
-        x = self.stocks.storage_policy.random_retrieve_line(o.sku_id)
-
+        if np.any(stock_info < 1):
+            raise ValueError("sku为0")
+        arrive_time = self.now
+        if self.rl:  # RL环境
+            o = kwargs['order_entry']
+            x = kwargs['bp'].place[0]
+            bp = kwargs['bp']
+            x, y, tier = kwargs['target']
+            outbound_order_name = o.name
+        else:  # 非RL环境
+            outbound_order_name = f"{OutboundOrderEntry.type_}{outbound_order_idx}"
+            o = OutboundOrderEntry(name=outbound_order_name, sku_id=sku_id, arrive_time=self.now)
+            # x = self.stocks.rand_R_x()
+            x = self.stocks.storage_policy.random_retrieve_line(o.sku_id)
+            if x in self.BP_fleet.at_lines.values():
+                bp = yield self.BP_fleet.get_line(x, lambda psb_: psb_.line == x)
+            else:
+                bp = yield self.BP_fleet.get_line(x, lambda psb_: psb_.idle)
+            x, y, tier, has_sku = self.strategy['Storage'].random_retrieve_from_line(x, sku_id)
         # print(f"{self.now:>1D0.2f}, {outbound_order_name}#({x:02d}-{y:02d}-{tier:1d}) arrived.")
         # 申请一台psb, 如果没有, 则会一直等待, 否则将申请附近最近可用车辆
-        logging.debug(f"{self.now:>10.2f}, psb lines is {self.BP_fleet.at_lines}, resource:{self.BP_fleet.items}")
+        logging.debug(f"{self.now:>10.2f}, bp lines is {self.BP_fleet.at_lines}, resource:{self.BP_fleet.items}")
         logging.info(f"{self.now:>10.2f}, {outbound_order_name} arrived. target x:{x}")
         self.print_cur_status()
-        if x in self.BP_fleet.at_lines.values():
-            psb = yield self.BP_fleet.get_line(x, lambda psb_: psb_.line == x)
-        else:
-            psb = yield self.BP_fleet.get_line(x, lambda psb_: psb_.idle)
+
         # x, y, tier = self.stocks.rand_R_from_x(x)
-        x, y, tier, has_sku = self.strategy['Storage'].random_retrieve_from_line(x, sku_id)
         self.order_arrival['R'].append(sku_id)
-        if not has_sku:
-            psb.released()
-            self.order_pool.append(o)
-            return
-        o.update(d=(x, y, tier), o=psb.place, start_time=self.now, sku_id=sku_id)  # 能够拿到psb的资源时，开始计时为工作时间
+        o.update(d=(x, y, tier), o=bp.place, start_time=self.now, sku_id=sku_id)  # 能够拿到psb的资源时，开始计时为工作时间
         o.time_line['catch_psb'] = self.now
         self.order_record[o.type_][outbound_order_name] = o
-        psb.occupied_by(o)
-        if psb.line != x:
-            logging.info(f"psb {psb.ID} change line from [{psb.line}] → [{x}]")
+        bp.occupied_by(o)
+        if bp.line != x:
+            logging.info(f"bp {bp.ID} change line from [{bp.line}] → [{x}]")
             # 需要PST进行转运, 转运完成后可以进行相同的出库操作  PSB.x → [是否在转运区间]  good.x
-            pst = yield self.TC_fleet.get_line(request_line_od=[psb.line, x], filter_=lambda pst_: pst_.idle)
+            tc = yield self.TC_fleet.get_line(request_line_od=[bp.line, x], filter_=lambda pst_: pst_.idle)
             o.time_line['catch_pst'] = self.now
-            # pst = fleet_pst.valuex
-            pst.occupied_by(o)
-            joint_y = -1 if pst.side else STACKS_OF_ONE_COL
+            tc.occupied_by(o)
+            joint_y = -1 if tc.side else STACKS_OF_ONE_COL
             # 事件 pst抵达-1位置, psb抵达-1位置, yield相同的行走时间, 释放pst
-            yield self.timeout(max(pst.go_to_horizontally(psb.line, False), psb.go_to_horizontally((psb.line, joint_y))))
-            o.time_line['pst&psb_joint'] = self.now
-            psb.place = pst.place = (psb.line, joint_y)
+            yield self.timeout(max(tc.go_to_horizontally(bp.line, False), bp.go_to_horizontally((bp.line, joint_y))))
+            o.time_line['tc&bp_joint'] = self.now
+            bp.place = tc.place = (bp.line, joint_y)
             ...
-            yield self.timeout(pst.take_psb2line(x))
-            psb.place = pst.place = (x, joint_y)
+            yield self.timeout(tc.take_psb2line(x))
+            bp.place = tc.place = (x, joint_y)
             o.time_line['finish_transfer'] = self.now
-            self.TC_fleet.put(pst)
-            pst.working_time += self.now - o.time_line['catch_pst']
-            pst.released()
+            self.TC_fleet.put(tc)
+            tc.working_time += self.now - o.time_line['catch_pst']
+            tc.released()
         # psb已抵达目标轨道, 从当前位置前往
-        t_psb2retrieve_point = psb.go_to_horizontally((x, y), is_loaded=False)
+        t_psb2retrieve_point = bp.go_to_horizontally((x, y), is_loaded=False)
         t_reshuffle = 0
         if tier < self.stocks.s_2d[x, y] - 1:  # 非栈顶sku
             o.reshuffle = self.stocks.s_2d[x, y] - tier - 1
             logging.error(f"{x}, {y}, {tier}")
-            t_reshuffle = psb.reshuffle_blocking_bin(self, (x, y), tier, sku_id=sku_id)[-1]
+            t_reshuffle = bp.reshuffle_blocking_bin(self, (x, y), tier, sku_id=sku_id)[-1]
         # 栈顶sku / 已翻箱完成
-        t_psb2workstation = psb.retrieve2workstation_without_shuffling(self, (x, y), tier)
+        t_psb2workstation = bp.retrieve2workstation_without_shuffling(self, (x, y), tier)
         t_retrieve = t_psb2retrieve_point + t_reshuffle + t_psb2workstation
         self.stocks.sync_[x, y] = True
 
         yield self.timeout(t_retrieve)
-        psb.place = (psb.line, -1)
-        psb.working_time += self.now - o.time_line['catch_psb']
+        bp.place = (bp.line, -1)
+        bp.working_time += self.now - o.time_line['catch_psb']
         o.time_line['retrieve_at_this_line'] = self.now
-        psb.released()
+        bp.released()
         o.end_at(self.now)
-        self.BP_fleet.put(psb)
+        self.BP_fleet.put(bp)
+        self.bp_fleet_activate = self.event()
         with self.work_stations[x].request() as req_workstation:
             yield req_workstation
             t_pickup = self.work_stations[x].pickup()
@@ -305,84 +380,69 @@ class PSS(Environment):
         self.finish_order_index[o.type_].append(outbound_order_idx)
         self.EC.record_R(o.all_ec)
         o.end_stack = self.stocks.s[x, y]
-        # TODO:  这儿存在机器人释放信号，直接绑定下一次的订单
-        # if self.order_pool.release_policy == 'FIFO':
-        #     next_order = self.order_pool.pop()
-        #     self.process(next_order)
-        # 如 env.process(self.order_pool)
 
-    def storage(self, inbound_order_idx):
+    def storage(self, inbound_order_idx, sku_id, **kwargs):
         """
         绑定一个存货[入库订单]流程
+        :param sku_id: 在生成订单时便产出sku_id
         :param inbound_order_idx: inbound task index
         """
-        inbound_order_name = f"{InboundOrderEntry.type_}{inbound_order_idx}"
-        sku_id = self.strategy['Storage'].order_arrive(inbound=True) if NUM_OF_SKU > 1 else 1
-        # x, y, z = self.stocks.rand_S_place()
-        x = self.strategy['Storage'].store_line(sku_id=sku_id)
-        o = InboundOrderEntry(inbound_order_name, arrive_time=self.now)
-        self.order_record[o.type_][o.name] = o
         arrive_time = self.now
-        self.print_cur_status()
-
-        if x in self.BP_fleet.at_lines.values():
-            psb = yield self.BP_fleet.get_line(x, lambda psb_: psb_.line == x)
+        if 'order_entry' in kwargs:
+            o = kwargs['order_entry']
+            x = kwargs['bp'].place[0]
+            bp = kwargs['bp']
+            x, y, z = kwargs['target']
         else:
-            psb = yield self.BP_fleet.get_line(x, lambda psb_: psb_.idle)
+            inbound_order_name = f"{InboundOrderEntry.type_}{inbound_order_idx}"
+            # sku_id = self.strategy['Storage'].order_arrive(inbound=True) if NUM_OF_SKU > 1 else 1
+            # x, y, z = self.stocks.rand_S_place()
+            x = self.strategy['Storage'].store_line(sku_id=sku_id)
+            o = InboundOrderEntry(inbound_order_name, arrive_time=self.now)
+            if x in self.BP_fleet.at_lines.values():
+                bp = yield self.BP_fleet.get_line(x, lambda psb_: psb_.line == x)
+            else:
+                bp = yield self.BP_fleet.get_line(x, lambda psb_: psb_.idle)
+        self.order_record[o.type_][o.name] = o
+        self.print_cur_status()
         with self.lines[x].request() as line_lock:
             yield line_lock
-            x, y, z = self.strategy['Storage'].store_to_line(sku_id, x)
+            if not self.rl:
+                x, y, z = self.strategy['Storage'].store_to_line(sku_id, x)
             o.update(d=(x, y, z), o=(x, -1), arrive_time=arrive_time, start_time=self.now, start_stack=self.stocks.s[x, y].copy(), sku_id=sku_id)
             self.order_arrival['S'].append(sku_id)
             o.time_line['catch_psb'] = self.now
-            psb.occupied_by(o)
-            if psb.line != x:
-                pst = yield self.TC_fleet.get_line([x, psb.line], lambda pst_: pst_.idle)
+            bp.occupied_by(o)
+            if bp.line != x:
+                tc = yield self.TC_fleet.get_line([x, bp.line], lambda pst_: pst_.idle)
                 o.time_line['catch_pst'] = self.now
                 # 事件 pst抵达-1位置, psb抵达-1位置, yield相同的行走时间, 释放pst
                 ...
-                joint_y = -1 if pst.side else STACKS_OF_ONE_COL
-                pst.occupied_by(o)
-                t_2line = max(pst.go_to_horizontally(psb.line), psb.go_to_horizontally((psb.line, joint_y)))
-                take_time = pst.take_psb2line(x)
+                joint_y = -1 if tc.side else STACKS_OF_ONE_COL
+                tc.occupied_by(o)
+                t_2line = max(tc.go_to_horizontally(bp.line), bp.go_to_horizontally((bp.line, joint_y)))
+                take_time = tc.take_psb2line(x)
                 yield self.timeout(t_2line + take_time)
-                pst.released()
-                pst.target_xyz = psb.target_xyz = (x, joint_y)
+                tc.released()
+                tc.target_xyz = bp.target_xyz = (x, joint_y)
                 o.time_line['finish_transfer'] = self.now
-                logging.debug(f"psb {psb.ID} change line from [{psb.line}] → [{x}]")
+                logging.debug(f"bp {bp.ID} change line from [{bp.line}] → [{x}]")
                 # 需要PST进行转运, 转运完成后可以进行相同的出库操作
-                self.TC_fleet.put(pst)
-            t_store = psb.store((x, y), self)
+                self.TC_fleet.put(tc)
+            t_store = bp.store((x, y), self)
             yield self.timeout(t_store)
-            psb.target_xyz = (x, y)
+            bp.target_xyz = (x, y)
             self.stocks.S(x, y, sku_id=sku_id)
         o.time_line['finish_store'] = self.now
         o.end_at(self.now)
-        psb.released()
-        self.BP_fleet.put(psb)
+        bp.released()
+        self.BP_fleet.put(bp)
+        self.bp_fleet_activate = self.event()
         self.EC.record_S(o.all_ec)
         self.finish_order_index[o.type_].append(inbound_order_idx)
 
     def __str__(self) -> str:
-        return f"{NUM_OF_COLS} × {STACKS_OF_ONE_COL}, with {NUM_OF_PSBs} PSBs, {NUM_OF_PSTs} PSTs"
-
-
-def grid_search(total_place):
-    shapes = []
-    tiers = list(range(5, 11))
-    for i in tiers:
-        s2d = total_place // i
-        root = round(s2d ** .5)
-        lower = s2d // 110
-        upper = s2d // 11
-        for j in range(lower, upper, 5):
-            k = s2d // j
-            shapes.append([i, j, k])
-    return shapes
-
-
-def main(para):
-    pass
+        return f"Warehouse Config: {NUM_OF_COLS} × {STACKS_OF_ONE_COL}, with {NUM_OF_PSBs} PSBs, {NUM_OF_PSTs} PSTs"
 
 
 if __name__ == '__main__':
@@ -400,7 +460,7 @@ if __name__ == '__main__':
     logging.log(60, time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
     logging.log(60, f"Sim:{SIM_ELAPSE}s / {SIM_ELAPSE // (3600 * 24)} × 24h")
     logging.log(60,
-                f"PSS Configuration\nStrategy:{'Single-sku' if NUM_OF_SKU == 1 else 'Multi-sku'}, Storage:{store_policy}\narrival rate:{ARRIVAL_RATE * 3600} orders/hour\nShape:{NUM_OF_COLS}×{STACKS_OF_ONE_COL}×{NUM_OF_TIERS}, AVAIL PLACE:{AVAIL_PLACE}\nRobots:{NUM_OF_PSBs} psb, {NUM_OF_PSTs} pst")
+                f"PSS Configuration({'RL activated' if RL_embedded else 'Non-RL'})\nStrategy:{'Single-sku' if NUM_OF_SKU == 1 else 'Multi-sku'}, Storage:{store_policy}\narrival rate:{ARRIVAL_RATE * 3600} orders/hour\nShape:{NUM_OF_COLS}×{STACKS_OF_ONE_COL}×{NUM_OF_TIERS}, AVAIL PLACE:{AVAIL_PLACE}\nRobots:{NUM_OF_PSBs} bp, {NUM_OF_PSTs} tc")
     pss.print_stats()
     print(pss.stocks.value_counts)
     t1 = time.time()

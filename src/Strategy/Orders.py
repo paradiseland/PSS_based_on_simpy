@@ -8,8 +8,11 @@ date:2021/11/8 09:21
 """
 
 from collections import OrderedDict
-
-from Warehouse.Stocks import Stocks
+from typing import TYPE_CHECKING
+from ORCSRS.Config import order_pool_size
+if TYPE_CHECKING:
+    from Orders.OrderEntry import OrderEntry
+    from Warehouse.Stocks import Stocks
 
 
 class OrderDesignate:
@@ -32,7 +35,12 @@ class OrderPool:
         self.items[order_entry.name] = order_entry
 
     def pop(self, order_entry):
-        self.items.pop(order_entry.name)
+        if isinstance(order_entry, str):
+            return self.items.pop(order_entry)
+        elif isinstance(order_entry, OrderEntry):
+            return self.items.pop(order_entry.name)
+        else:
+            raise ValueError
 
     def sort(self):
         """
@@ -41,3 +49,13 @@ class OrderPool:
         """
         sorted_orders = sorted(self.items, key=lambda x: x) # TODO:
 
+    def foreXorders(self, x, t):
+        sorted_order = sorted(self.items.values(), key=lambda o: -o.has_waiting_since(t))
+        return sorted_order[:order_pool_size]
+
+    def __len__(self):
+        return len(self.items)
+
+    @property
+    def sku_dict(self):
+        return {k: v.sku_id for k,v in self.items.items()}
