@@ -6,11 +6,18 @@ Author: Xingwei Chen
 Email:cxw19@mails.tsinghua.edu.cn
 date:2021/11/6 09:09
 """
-from typing import TYPE_CHECKING
+import copy
+import random
+from typing import TYPE_CHECKING, Tuple
+import numpy as np
+
+from ORCSRS.Config import NUM_OF_COLS
+from Strategy.Orders import OrderPool
+from util.run import timeit
 
 if TYPE_CHECKING:
     from ORCSRS.PSS import PSS
-    from Orders.OrderEntry import OrderEntry
+from Orders.OrderEntry import OrderEntry, OutboundOrder, OutboundOrderEntry, InboundOrderEntry
 from Robots.PSB import PSB
 
 
@@ -26,46 +33,162 @@ class SchedulingPolicy:
         self.env: 'PSS' = env
         self.hit = {}  # 订单/sku命中料箱策略
         self.assign_bp = {}  # 空闲bp 绑定订单策略
-        self.order_pool = env.order_pool
+        self.order_pool: OrderPool = env.order_pool
 
-    def hit_stack(self, order: 'OrderEntry', strategy):
+    def select_order(self, bp: 'PSB') -> Tuple['OrderEntry', tuple]:
         """
-        采取策略对指定订单进行命中
-        :param order: 该订单/sku
-        :param strategy: 采取策略
-        :return: Stack info, including stack info and stack place. locked this stack immediately
+        target place hit rule: top first, travel_time(BP place with target place),  inline, dual_command
+        :inline: considering the BP line
+        order hit rule: 1: random; 2: FIFO, 3: Top then FIFO, 4.BP place
+        :return: order, place
         """
-        pass
+        if self.env.action == 0:
+            order_entry, target_place, batch_info = self.select_order_baseline_random(bp)
+        elif self.env.action == 1:
+            order_entry, target_place, batch_info = self.select_order_baseline_random(bp, inline=True)
+        elif self.env.action == 2:
+            order_entry, target_place, batch_info = self.select_order_baseline_random(bp, inline=True, travel_length=True)
+        elif self.env.action == 3:
+            order_entry, target_place, batch_info = self.select_order_baseline_random(bp, inline=True, travel_length=True,
+                                                                          dual_command=True)
+        elif self.env.action == 4:
+            order_entry, target_place, batch_info = self.select_order_baseline_random(bp, inline=True, travel_length=True,
+                                                                          dual_command=True, top_first=True)
+        elif self.env.action == 5:
+            order_entry, target_place, batch_info = self.select_order_baseline_random(bp, inline=True, travel_length=True,
+                                                                          dual_command=True, top_first=True,
+                                                                          consider_reshuffle=True)
+        elif self.env.action == 6:
+            order_entry, target_place, batch_info = self.select_order_baseline_fifo(bp)
+        elif self.env.action == 7:
+            order_entry, target_place, batch_info = self.select_order_baseline_fifo(bp, inline=True)
+        elif self.env.action == 8:
+            order_entry, target_place, batch_info = self.select_order_baseline_fifo(bp, inline=True, travel_length=True)
+        elif self.env.action == 9:
+            order_entry, target_place, batch_info = self.select_order_baseline_fifo(bp, inline=True, travel_length=True,
+                                                                        dual_command=True)
+        elif self.env.action == 10:
+            order_entry, target_place, batch_info = self.select_order_baseline_fifo(bp, inline=True, travel_length=True,
+                                                                        dual_command=True, top_first=True)
+        elif self.env.action == 11:
+            order_entry, target_place, batch_info = self.select_order_baseline_fifo(bp, inline=True, travel_length=True,
+                                                                        dual_command=True, top_first=True,
+                                                                        consider_reshuffle=True)
+        else:
+            raise ValueError(f"[Error], Wrong action number: {self.env.action}")
+        return order_entry, target_place
 
-    def sort(self, **kwargs):
-        """
-        对订单池内订单进行优先级打分排序
-        考虑因素包括: 已等待时间, 目标sku对应库存位置序列, 机器人位置信息,
-        :return:
-        """
-        sorted(self.order_pool, key=lambda o: [o])
-        return 0
-
-    def select_target_for_order(self, order: 'OrderEntry', bp: 'PSB', order_sorted: bool):
-        if order.type_ == 'S':
+    def select_target_for_order(self, order: 'OrderEntry', bp: 'PSB', tier_x_sku_set_inline, travel_length=False,
+                                top_first=False):
+        if order.type_ == InboundOrderEntry.type_:
             # x_target = self.env.strategy['Storage'].store_line(order.sku_id)
             x, y, z = self.env.strategy['Storage'].store_to_line(order.sku_id, bp.place[0])
-        elif not order_sorted:
-            x_target = self.env.strategy['Storage'].random_retrieve_line(sku_id=order.sku_id)
-            x, y, z, has_sku = self.env.strategy['Storage'].random_retrieve_from_line(x_target, order.sku_id)
         else:
-            x, y, z, has_sku = self.env.strategy['Storage'].random_retrieve_from_line(bp.place[0], order.sku_id)
+            x, y, z, has_sku = self.select_target_considering_all(bp.place[0], order.sku_id, tier_x_sku_set_inline,
+                                                                  travel_length, top_first)
         return x, y, z
 
-    def select_order_for_bp_0(self, bp):
+    def select_target_considering_all(self, sku_id, x, tier_x_sku_set_inline, travel_length=False,
+                                      top_first=False,
+                                      inline=False):
+        if inline and sku_id in tier_x_sku_set_inline[0].union(tier_x_sku_set_inline[1]):
+            x, y, z, has_sku = self.env.strategy['Storage'].random_retrieve_from_line(x, sku_id)
+        else:
+
+            x_target = self.env.strategy['Storage'].random_retrieve_line(sku_id)
+            x, y, z, has_sku = self.env.strategy['Storage'].random_retrieve_from_line(x_target, sku_id)
+        return x, y, z, has_sku
+
+    @timeit
+    def select_order_baseline_random(self, bp: 'PSB' = None, inline=False, travel_length=False, dual_command=False,
+                                     top_first=False, consider_reshuffle=False):
         """
-        【FIFO】根据到达时间排序，进行排序
-        :return:
+        :param bp:
+        :param inline:
+        :param travel_length:
+        :param dual_command:
+        :param top_first:
+        :param consider_reshuffle:
+        :return: OrderEntry, designated place, batch or not
         """
-        sorted_orders = sorted(self.order_pool.items.items(), key=lambda o: o[1].arrive_time)
-        order_name, order_popped = sorted_orders[0]
-        x, y, z = self.select_target_for_order(order_popped, bp, None)
-        return order_name, order_popped, (x, y, z)
+        """
+        thinking:
+        Order popping: 
+            - sort elements: 1. this command(dual command)[if need track-changing, it is not important], 2. top_first, 3.consider_reshuffle   
+            - filter elements(-> sort, when available orders is not enough): 1. inline, 
+            - randomize the order to pop up 
+            ----------------------------------------------------------------------------------
+            Top first has conflict/overlap with consider_reshuffle,
+            order: inline > this command > top_first/consider_reshuffle
+        Target place hit:  
+            - sort elements: 1. travel length 2. top_first
+            order: top_first/consider_reshuffle > travel_length
+        """
+        x, y = bp.place
+        last_command = OutboundOrderEntry.type_ if y != -1 else InboundOrderEntry.type_
+        tier_x_stocks, tier_x_stocks_inline, tier_x_sku_set_inline = {}, {}, {}
+        if top_first:
+            tier_x_stocks[0] = self.env.stocks.tier_x(0)
+            tier_x_stocks_inline[0] = tier_x_stocks[0][x]  # collect the sku set of  tier0 containers.
+            tier_x_sku_set_inline[0] = set(tier_x_stocks_inline[0])
+        if consider_reshuffle:
+            tier_x_stocks[1] = self.env.stocks.tier_x(1)
+            tier_x_stocks_inline[1] = tier_x_stocks[1][x]
+            tier_x_sku_set_inline[1] = set(tier_x_stocks_inline[1])
+        sort_func = lambda order: (order[1].type_ == last_command if inline and dual_command else 0,
+                                   order[1].sku_id not in tier_x_sku_set_inline[0] if top_first else 0,
+                                   order[1].sku_id not in tier_x_sku_set_inline[0].union(
+                                       tier_x_sku_set_inline[1]) if consider_reshuffle else 0)
+        candidate_length = len(self.order_pool) // 4 if len(
+            self.order_pool) // 4 >= 1 else 1  # reduce the candidate orders
+        orders_sorted = sorted(self.order_pool.items.items(), key=sort_func)[:candidate_length]
+        x_idx = (x, x + 1) if inline else (0, NUM_OF_COLS)
+        if consider_reshuffle:  # combine two R orders together
+            top0 = self.env.stocks.tier_x(0)
+            top1 = self.env.stocks.tier_x(1)
+        order_name = random.sample(orders_sorted, 1)[0][0]
+        order_entry = self.order_pool.items.pop(order_name)
+        target_place = self.select_target_for_order(order=order_entry, bp=bp,
+                                                    tier_x_sku_set_inline=tier_x_sku_set_inline,
+                                                    travel_length=travel_length)
+        batch = True
+        return order_entry, target_place, batch
+
+    def select_order_baseline_fifo(self, bp: 'PSB' = None, inline=False, travel_length=False, dual_command=False,
+                                   top_first=False,
+                                   consider_reshuffle=False, ):
+        """
+        FIFO与DD(Due time) 调度规则是相同的
+        """
+        x, y = bp.place
+        last_command = OutboundOrderEntry.type_ if y != -1 else InboundOrderEntry.type_
+        tier_x_stocks, tier_x_stocks_inline, tier_x_sku_set_inline = {}, {}, {}
+        if top_first:
+            tier_x_stocks[0] = self.env.stocks.tier_x(0)
+            tier_x_stocks_inline[0] = tier_x_stocks[0][x]  # collect the sku set of  tier0 containers.
+            tier_x_sku_set_inline[0] = set(tier_x_stocks_inline[0])
+        if consider_reshuffle:
+            tier_x_stocks[1] = self.env.stocks.tier_x(1)
+            tier_x_stocks_inline[1] = tier_x_stocks[1][x]
+            tier_x_sku_set_inline[1] = set(tier_x_stocks_inline[1])
+        sort_func = lambda order: (order[1].type_ == last_command if inline and dual_command else 0,
+                                   order[1].sku_id not in tier_x_sku_set_inline[0] if top_first else 0,
+                                   order[1].sku_id not in tier_x_sku_set_inline[0].union(
+                                       tier_x_sku_set_inline[1]) if consider_reshuffle else 0)
+        candidate_length = len(self.order_pool) // 4 if len(
+            self.order_pool) // 4 >= 1 else 1  # reduce the candidate orders
+        orders_sorted = sorted(self.order_pool.items.items(), key=sort_func)[:candidate_length]
+        x_idx = (x, x + 1) if inline else (0, NUM_OF_COLS)
+        if consider_reshuffle:  # combine two R orders together
+            top0 = self.env.stocks.tier_x(0)
+            top1 = self.env.stocks.tier_x(1)
+        order_name = orders_sorted[0][0]
+        order_entry = self.order_pool.items.pop(order_name)
+        target_place = self.select_target_for_order(order=order_entry, bp=bp,
+                                                    tier_x_sku_set_inline=tier_x_sku_set_inline,
+                                                    travel_length=travel_length)
+        batch = True
+        return order_entry, target_place, batch
 
     def select_order_for_bp_1(self, bp: 'PSB'):
         """
@@ -82,18 +205,28 @@ class SchedulingPolicy:
         x, y, z = self.select_target_for_order(order_popped, bp, sorted_orders_this_track)
         return order_popped_name, order_popped, (x, y, z)
 
-    def select_order_for_bp_2(self, bp):
+    def select_order_reshuffle_tier0(self, bp):
+        """
+        prefer to output top sku of certain stack
+        """
+        top_view = self.env.stocks.tier_x(0)
+
+        pass
+
+    def select_order_reshuffle_tier0_inline(self, bp):
+        """
+        prefer to output top sku of certain stack, in bp.line
+        """
+        top_view_x = self.env.stocks.tier_x(0)[bp.place[0]]
+
+        pass
+
+    def select_order_reshuffle_tier1(self, bp):
         """
         考虑次层任务
         :return:
         """
         x, y = bp.place
-        top0 = self.env.stocks.tier_x(0)
-        top1 = self.env.stocks.tier_x(1)
+        top0_view = self.env.stocks.tier_x(0)
+        top1_view = self.env.stocks.tier_x(1)
         self.select_target_for_order()
-
-    def select_order_for_bp_3(self):
-        pass
-
-    def select_order_for_bp_4(self):
-        pass

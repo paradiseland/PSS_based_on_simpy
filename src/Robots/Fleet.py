@@ -18,6 +18,7 @@ from Robots.PST import PST
 if TYPE_CHECKING:
     from ORCSRS.PSS import PSS
 
+
 class Fleet(FilterStore):
     """
     定义一个psb车队
@@ -30,7 +31,8 @@ class Fleet(FilterStore):
         self.items.extend(self.all_PSBs)
         for psb in self.all_PSBs:
             psb.bind_fleet(self)
-        logging.info(f"BP robots fleet initializing...\nIncluding {len(self.all_PSBs)} BP robots, initialized at {[f'{pst.name}:{pst.place}' for pst in self.all_PSBs]}")
+        logging.info(
+            f"BP robots fleet initializing...\nIncluding {len(self.all_PSBs)} BP robots, initialized at {[f'{pst.name}:{pst.place}' for pst in self.all_PSBs]}")
 
     @property
     def at_lines(self):
@@ -69,7 +71,8 @@ class Fleet_PST(FilterStore):
         self.all_PSTs = [PST(config) for config in PSTs_info]
         self.items.extend(self.all_PSTs)
         self.request_line = 0
-        logging.info(f"TC Robots fleet initializing...\nIncluding {len(self.all_PSTs)} tc robots, initialized at {[f'{pst.name}:{pst.place}' for pst in self.all_PSTs]}")
+        logging.info(
+            f"TC Robots fleet initializing...\nIncluding {len(self.all_PSTs)} tc robots, initialized at {[f'{pst.name}:{pst.place}' for pst in self.all_PSTs]}")
 
     def get_line(self, request_line_od, filter_: Callable[[Any], bool] = lambda item: True) -> FilterStoreGet:
         self.items.sort(key=lambda pst: (not pst.can_handle(request_line_od), abs(pst.line - request_line_od[0])))

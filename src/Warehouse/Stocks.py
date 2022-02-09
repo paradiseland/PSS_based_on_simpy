@@ -40,6 +40,7 @@ class Stocks:
         self.sync_ = np.ones(shape[:2], dtype=np.bool)
         self.storage_policy = StoragePolicy(store_policy, self)
         logging.info(f"Stocks initializing...\nshape:{self.shape}, occupied rate: {self.s_rate:.2%}, avail stacks:{np.sum(self.sync_)}\nStocks details (2d gridview):\n{self.s_2d}")
+        self.debug = {'forced-put': 0}
 
     @property
     def s_2d(self) -> np.ndarray:
@@ -51,7 +52,8 @@ class Stocks:
 
     @property
     def value_counts(self):
-        return pd.Series(self.s.ravel()[1:]).value_counts().sort_index()[1:].to_numpy()
+        z: pd.Series = pd.Series(self.s.ravel()[1:]).value_counts().sort_index()
+        return z.values, z.index
 
     @property
     def s_rate(self):
@@ -66,7 +68,7 @@ class Stocks:
         locked = np.argwhere(self.s_2d != self.sync_)
         return locked, locked.shape[0]
 
-    @timeit
+    # @timeit
     def tier_x(self, z):
         """
         从俯视图角度，给出顶层sku内容
@@ -154,8 +156,9 @@ class Stocks:
                 z = np.argwhere(self.s[x, y] == 0)[0, 0]
                 self.s[x, y, z] = sku_id
             except IndexError:
-                logging.log(60, f"{x, y} is forced 'S' a sku-{sku_id}")
+                logging.log(55, f"{x, y} is forced 'S' a sku-{sku_id}")
                 self.s[x, y, NUM_OF_TIERS - 1] = sku_id
+                self.debug['forced-put'] += 1
         if is_S:  # recognize the action is reshuffling or not
             self.sync_[x, y] = True
 
