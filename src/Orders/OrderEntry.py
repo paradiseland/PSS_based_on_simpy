@@ -22,7 +22,8 @@ class OrderEntry:
     """
     """
 
-    def __init__(self, target_xyz: Tuple[int, int, int] = (), s: np.ndarray = None, target=None, start=None, sku_id=None, **kwargs):
+    def __init__(self, target_xyz: Tuple[int, int, int] = (), s: np.ndarray = None, target=None, start=None,
+                 sku_id=None, **kwargs):
         self.name = ""
         self.arrive_time: SimTime = 0
         self.start_time: SimTime = 0
@@ -62,7 +63,7 @@ class OrderEntry:
         self.robots['PSB'].released()
         pst = f"{self.robots['PST'].name}" if self.robots['PST'] is not None else ''
         logging.info(
-                f"{self.name:<8}, arr: {self.arrive_time:<10.2f}, start: {self.start_time:<10.2f}, end: {self.end_time:<10.2f}. waiting time: {self.waiting_time:<6.2f}s, working time: {self.executing_time:<6.2f}s --------------PSB-{self.robots['PSB'].ID:02} ec:{self.all_ec * 3600:<6.2f} KJ, [{self.o[0]},{self.o[1]}]→[{self.d[0]},{self.d[1]}], {pst}")
+            f"{self.name:<8}, arr: {self.arrive_time:<10.2f}, start: {self.start_time:<10.2f}, end: {self.end_time:<10.2f}. waiting time: {self.waiting_time:<6.2f}s, working time: {self.executing_time:<6.2f}s --------------PSB-{self.robots['PSB'].ID:02} ec:{self.all_ec * 3600:<6.2f} KJ, [{self.o[0]},{self.o[1]}]→[{self.d[0]},{self.d[1]}], {pst}")
         # except TypeError:
         #     logging.error(f"{self.name}")
 
@@ -90,7 +91,8 @@ class OrderEntry:
         if _value >= 1:
             self._reshuffle = _value
         else:
-            logging.info(f'{self.name}, reshuffle task <= 0, {self.target_xyz}, stack info:{self.start_stack} -> {self.end_stack}')
+            logging.info(
+                f'{self.name}, reshuffle task <= 0, {self.target_xyz}, stack info:{self.start_stack} -> {self.end_stack}')
 
 
 class InboundOrderEntry(OrderEntry):
@@ -110,9 +112,14 @@ class OutboundOrderEntry(OrderEntry):
         # self.reshuffle = np.sum(s) - target_xyz[2] - 1
         self.d = target_xyz[:2] if target_xyz else None
         self.name = name
+        self.modified_sku = False
 
     def __str__(self):
         return f"{self.name},[{self.d}]"
+
+    def reset_another_sku(self, sku_id):
+        self.modified_sku = True
+        self.sku_id = sku_id
 
 
 class OrderLine:

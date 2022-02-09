@@ -1,25 +1,44 @@
-2021-12-09 14:41:35
-Sim:1000000s / 11 × 24h
-PSS Configuration(Non-RL)
-Strategy:Multi-sku, Storage:zoned
-arrival rate:100.0 orders/hour
-Shape:10×40×8, AVAIL PLACE:3200
-Robots:5 bp, 3 tc
-Finish rate: R:99.99%, 99.99%
-Current stocks status: stocks_rate: 53.91%, lock_rate: 0.75%
-Robots utility
-['PSB-0:58.13%', 'PSB-1:58.23%', 'PSB-2:57.35%', 'PSB-3:57.56%', 'PSB-4:59.25%']
-['PST-0:1.20%', 'PST-1:1.21%', 'PST-2:10.39%']
-Energy Consumption ↓ 
-R-jobs: 27792,  avg: 9.01 KJ,  min: 0.45 KJ, max: 29.76 KJ, var: 21.31 KJ^2, total: 250411.42 KJ
-S-jobs: 27778,  avg: 5.41 KJ, min: 0.51 KJ, max: 14.73 KJ, var: 10.04 KJ^2, total: 150202.57 KJ
-R: reshuffle:39522.81 KJ, general: 215403.27 KJ
-Total EC: 400613.99 KJ
-Reshuffle task: 50.60%, 2.23
-Time ↓ 
-R: mean waiting time:  110.6s, mean working time: 104.5s, reshuffle_time part: 57.82%
-S: mean waiting time:  111.4s, mean working time: 47.7s
-Mean queue length: 6.1
-cpu time: 96.89 s
---------------------------------------------------------------------------
-[729 118 130 122  31  72  84 103  89  36  72  34  41  16  47]
+PSS Environment initializing......
+BP robots fleet initializing...
+Including 5 BP robots, initialized at ['PSB-0:(0, -1)', 'PSB-1:(1, -1)', 'PSB-2:(2, -1)', 'PSB-3:(3, -1)', 'PSB-4:(4, -1)']
+TC Robots fleet initializing...
+Including 3 tc robots, initialized at ['PST-0:(0, -1)', 'PST-1:(5, -1)', 'PST-2:(0, 40)']
+PyDev console: starting.
+
+array([[  4,   3,   5,   7,   3,   3,   7,   5,   3,   5,   3,   3,   4,   0,   0,   2,   1,   4,   2,   1,   6,   3,   4,   1,   2,   4,   1,   4,   2,   3,   2,   7,   3,   1,   5,   1,   4,   0,   1,   4],
+       [  5,   4,   3,   3,   1,   2,   3,   6,   4,   0,   4,   3,   2,   5,   6,   5,   2,   3,   4,   5,   3,   3,   1,   1,   5,   6,   3,   6,   4,   2,   4,   7,   3,   7, 255,   5,   4,   3,   4,   0],
+       [  3,   4,   6,   2,   2,   2,   5,   4,   2,   5,   4,   5,   2,   3,   3,   1,   4,   4,   4,   3,   1,   3,   3,   2,   3,   4,   7,   4,   4,   3,   0,   3,   4,   8,   3,   4,   3,   1,   6,   5],
+       [  5,   2,   6,   1,   5,   8,   2,   2,   4,   2,   0,   4,   1,   4,   2,   7,   2,   3,   5,   1,   4,   6,   0,   4,   4,   5,   1,   1,   5,   4,   4,   4,   2,   4,   4,   2,   7,   4,   1,   5],
+       [  2,   5,   6,   2,   5,   4,   5,   7,   3,   2,   2,   2,   3,   4,   4,   5,   4,   6,   3,   9,   5,   2,   1,   4,   3,   5,   4,   3,   2,   0,   3,   5,   4,   1,   4,   4,   2,   4,   4,   1],
+       [  4,   5,   6,   6,   1,   2,   5,   5,   5,  11,   5,   6,   5,   5,   3,   5,   2,   3,   3,   4,   8,   0,   5,   0,   3,   6,   4,   1,   2,   5,   2,   4,   4,   2,   8,   5,   0,   4,   2,   5],
+       [  2,   3,   5,   5,   1,   3,   3,   2,   7,   4,   1,   5,   8,   6,   0,   3,   6,   2,   4,   5,   2,   3, 254,   1,   3,   1,   7,   1,   3,   4,   6,   1,   6,   4,   2,   4,   4,   2,   4,   3],
+       [  4,   5,   7,   1,   8,   0,   3,   5,   4,   2,   3,   3,   2,   5,   4,   2,   5,   4,   5,   5,   2,   2,   5,   5,   3,   4,   6,   2,   5,   3,   3,   6,   5,   5,   6,   4,   5,   3,   4,   3],
+       [  4,   5,   2,   8,   1,   1,   6,   5,   5,   5,   3,   2,   4,   2,   5,   3,   2,   3,   4,   2,   2,   4,   4,   2,   3,   4,   1,   1,   2,   3,   4,   6,   5,   3,   3,   1,   3,   3,   4,   2],
+       [  5,   7,   3,   4,   5,   3,   4,   4,   4,   2,   4,   4,   6,   5,   8,   2,   5,   4,   8,   2,   2,   2,   0,   2,   2,   4,   4,   7,   5,   2,   2,   4,   1,   7,   6,   3,   0,   6,   3,   6]], dtype=uint8)
+{}
+{1: []}
+Stocks initializing...
+shape:(10, 40, 8), occupied rate: 45.00%, avail stacks:400
+Stocks details (2d gridview):
+[[4 3 5 7 3 3 7 5 3 5 3 3 4 0 0 2 1 4 2 1 6 3 4 1 2 4 1 4 2 3 2 7 3 1 5 1 4 0 1 4]
+ [5 4 3 3 1 2 3 6 4 0 4 3 2 5 6 5 2 3 4 5 3 3 1 1 5 6 3 6 4 2 4 7 3 7 8 5 4 3 4 0]
+ [3 4 6 2 2 2 5 4 2 5 4 5 2 3 3 1 4 4 4 3 1 3 3 2 3 4 7 4 4 3 0 3 4 8 3 4 3 1 6 5]
+ [5 2 6 1 5 8 2 2 4 2 0 4 1 4 2 7 2 3 5 1 4 6 0 4 4 5 1 1 5 4 4 4 2 4 4 2 7 4 1 5]
+ [2 5 6 2 5 4 5 7 3 2 2 2 3 4 4 5 4 6 3 8 5 2 1 4 3 5 4 3 2 0 3 5 4 1 4 4 2 4 4 1]
+ [4 5 6 6 1 2 5 5 5 8 5 6 5 5 3 5 2 3 3 4 8 0 5 0 3 6 4 1 2 5 2 4 4 2 8 5 0 4 2 5]
+ [2 3 5 5 1 3 3 2 7 4 1 5 8 6 0 3 6 2 4 5 2 3 8 1 3 1 7 1 3 4 6 1 6 4 2 4 4 2 4 3]
+ [4 5 7 1 8 0 3 5 4 2 3 3 2 5 4 2 5 4 5 5 2 2 5 5 3 4 6 2 5 3 3 6 5 5 6 4 5 3 4 3]
+ [4 5 2 8 1 1 6 5 5 5 3 2 4 2 5 3 2 3 4 2 2 4 4 2 3 4 1 1 2 3 4 6 5 3 3 1 3 3 4 2]
+ [5 7 3 4 5 3 4 4 4 2 4 4 6 5 8 2 5 4 8 2 2 2 0 2 2 4 4 7 5 2 2 4 1 7 6 3 0 6 3 6]]
+1440
+(10, 40, 8)
+0.5
+3200
+Traceback (most recent call last):
+  File "/Users/cxw/Library/Mobile Documents/com~apple~CloudDocs/from_cxw_mac/Graduate/Code/PSS_based_on_simpy/src/ORCSRS/PSS.py", line 507, in <module>
+    pss = PSS()
+  File "/Users/cxw/Library/Mobile Documents/com~apple~CloudDocs/from_cxw_mac/Graduate/Code/PSS_based_on_simpy/src/ORCSRS/PSS.py", line 83, in __init__
+    self.stocks: Stocks = Stocks((NUM_OF_COLS, STACKS_OF_ONE_COL, NUM_OF_TIERS), self)
+  File "/Users/cxw/Library/Mobile Documents/com~apple~CloudDocs/from_cxw_mac/Graduate/Code/PSS_based_on_simpy/src/Warehouse/Stocks.py", line 43, in __init__
+    self.debug = {'forced-put': 0}
+KeyboardInterrupt

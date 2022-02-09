@@ -10,6 +10,7 @@ date:2021/11/8 09:21
 from collections import OrderedDict
 from typing import TYPE_CHECKING
 from ORCSRS.Config import order_pool_size
+
 if TYPE_CHECKING:
     from Orders.OrderEntry import OrderEntry
     from Warehouse.Stocks import Stocks
@@ -42,20 +43,22 @@ class OrderPool:
         else:
             raise ValueError
 
-    def sort(self):
+    def foreXorders(self, x, t):
         """
-        Sort the orders in the order pool
+        Get the fore [order pool size] orders.
+        :param x:
+        :param t:
         :return:
         """
-        sorted_orders = sorted(self.items, key=lambda x: x) # TODO:
-
-    def foreXorders(self, x, t):
         sorted_order = sorted(self.items.values(), key=lambda o: -o.has_waiting_since(t))
-        return sorted_order[:order_pool_size]
+        return sorted_order[:x]
 
     def __len__(self):
         return len(self.items)
 
+    def __str__(self):
+        return f"{len(self.items)} orders"
+
     @property
     def sku_dict(self):
-        return {k: v.sku_id for k,v in self.items.items()}
+        return {k: v.sku_id for k, v in self.items.items()}

@@ -18,9 +18,10 @@ MIXED = 'mixed'
 TOP_FIRST = 'top_first'  # 订单命中的策略
 ONE_SKU, MULTI_SKU = 'single-sku', 'multi-sku'
 DETERMINED = 'determined'
+EPSILON = 0.1
 
 # log config
-without_change_track_log_file_path = './1l1psb3200.log'
+without_change_track_log_file_path = '../Result/1l1psb3200.log'
 change_track_log_file_path = '../Result/mull1psb3200.log'
 result_csv = '../Result/result.csv'
 
@@ -28,6 +29,7 @@ result_csv = '../Result/result.csv'
 ARRIVAL_RATE = 100 / 3600  # Modified by Xingwei Chen 2021/7/25 16:14
 EXPOVARIATE_ARRIVE = 'expovariate_arrive'
 SIM_ELAPSE = 1000000
+SIM_ELAPSE_RL = 100000
 # Warehouse
 NUM_OF_COLS = 10
 STACKS_OF_ONE_COL = 40
@@ -53,22 +55,31 @@ w_up = 15
 w_low = 0
 
 # Write
-write_in = True  # write in Result.csv
-log_level = 50  # print log content to console
+write_in = False  # write in Result.csv
+log_level = 10  # print log content to console
 # Storage policy
 # store_policy = 'determined'
-store_policy = 'zoned'
-# store_policy = 'random'
+# store_policy = 'zoned'
+store_policy = 'random'
 
 result_cols = [
-    'sim time', 'N_{sku}', 'sku strategy', 'storage policy', 'lambda', 'shape', 'N_{stack}', 'N_{BP}', 'N_{TC}', 'R_{lock}', 'T_w(s)', 'T_s(s)', 'RECO(kJ)', 'TREC(kJ)', 'SCEO(kJ)', 'TSEC(kJ)', 'TEC(kJ)', 'U_{BP}', 'U_{TC}', 'MR_{per}', 'MRTiers', 'Finish rate(R)', 'Finish rate(S)', 'stocks rate', 'lock rate', 'BP utility', 'TC utility', 'R jobs', 'S jobs', 'Reshuffle time part', 'queue length'
+    'sim time', 'N_{sku}', 'sku strategy', 'storage policy', 'lambda', 'shape', 'N_{stack}', 'N_{BP}', 'N_{TC}',
+    'R_{lock}', 'T_w(s)', 'T_s(s)', 'RECO(kJ)', 'TREC(kJ)', 'SCEO(kJ)', 'TSEC(kJ)', 'TEC(kJ)', 'U_{BP}', 'U_{TC}',
+    'MR_{per}', 'MRTiers', 'Finish rate(R)', 'Finish rate(S)', 'stocks rate', 'lock rate', 'BP utility', 'TC utility',
+    'R jobs', 'S jobs', 'Reshuffle time part', 'queue length'
 ]
 
-# RL
+# RLTask
 # order pool refresh time
-RL_embedded = False
+RL_embedded = True
 order_pool_time_interval = 3600  # s
 order_pool_size = 100
-
 NUM_OF_SCHEDULING_STRATEGIES = 5
+# STATE_DIM = int(4 + order_pool_size * 3 / NUM_OF_COLS + NUM_OF_TIERS * STACKS_OF_ONE_COL)
+STATE_DIM = AVAIL_PLACE + order_pool_size * 3 + NUM_OF_COLS * 4
+ACTION_DIM = 6
 
+# reward
+reshuffle_tiers_weight = -10
+travel_length_weight = -1
+change_track_weight = -5
