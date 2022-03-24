@@ -6,6 +6,7 @@ Author: Xingwei Chen
 Email:cxw19@mails.tsinghua.edu.cn
 date:2021/11/22 14:32
 """
+import random
 import time
 from collections import Counter
 from typing import TYPE_CHECKING
@@ -20,7 +21,7 @@ from elegantrl.train.utils import init_agent, init_evaluator, init_replay_buffer
 from simpy import AnyOf, Environment, AllOf
 
 from ORCSRS.Config import STACKS_OF_ONE_COL, NUM_OF_COLS, NUM_OF_TIERS, order_pool_size, SIM_ELAPSE, STATE_DIM, \
-    ACTION_DIM, log_level, RL_embedded
+    ACTION_DIM, log_level, RL_embedded, RANDOM_SEED
 from Orders.OrderEntry import OutboundOrderEntry
 
 from ORCSRS.PSS import PSS
@@ -138,7 +139,7 @@ class RL(gym.Env):
         self.simpyEnv.log_BP_status()
 
     def seed(self, seed=None):
-        random = self
+        random.seed(seed)
 
     def print_stats(self):
         self.simpyEnv.print_stats()
@@ -163,7 +164,7 @@ if __name__ == '__main__':
     args.state_dim = STATE_DIM
     args.action_dim = ACTION_DIM
     args.if_discrete = True
-    args.random_seed = 42
+    args.random_seed = RANDOM_SEED
     args.worker_num = 1
     args.cwd = 'src/Result/RLModel'
     train(args)

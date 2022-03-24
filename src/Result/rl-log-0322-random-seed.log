@@ -1,0 +1,546 @@
+Start training!
+env：ORCSRS-RL, algorithm：DoubleDQN, device：cpu.
+****************************************
+1_th episode-12674:
+Sim:1000000s / 11 × 24h
+PSS Configuration(Non-RLTask)
+Strategy:Multi-sku, Storage:zoned
+arrival rate:100.0 orders/hour
+Shape:10×40×8, AVAIL PLACE:3200
+Robots:7 bp, 3 tc
+Finish rate: R:46.38%, 46.75%
+Current stocks status: stocks_rate: 59.19%, lock_rate: 0.25%
+Robots utility
+['PSB-0:20.31%', 'PSB-1:20.90%', 'PSB-2:20.52%', 'PSB-3:20.57%', 'PSB-4:21.23%', 'PSB-5:20.87%', 'PSB-6:19.85%']
+['PST-0:0.93%', 'PST-1:1.04%', 'PST-2:11.99%']
+Energy Consumption ↓ 
+R-jobs: 12781,  avg: 8.88 KJ,  min: 0.45 KJ, max: 24.64 KJ, var: 12.18 KJ^2, total: 113472.64 KJ
+S-jobs: 13019,  avg: 2.97 KJ, min: 0.32 KJ, max: 10.94 KJ, var: 2.84 KJ^2, total: 38715.01 KJ
+R: reshuffle:17043.73 KJ, general: 90304.83 KJ
+Total EC: 152187.65 KJ
+Reshuffle task: 22.99%, 2.18
+Time ↓ 
+R: mean waiting time:  252931.4s, mean working time: 112.9s, reshuffle_time part: 53.74%
+S: mean waiting time:  0.4s, mean working time: 46.6s
+Mean queue length: 0.0
+TryExcept in Stocks: {'forced-put': 93}
+Modified R orders: 0
+action: Counter({2: 10551, 1: 2955, 5: 1367, 9: 1176, 11: 1105, 3: 1095, 10: 994, 0: 962, 8: 915, 4: 858, 6: 716, 7: 707})
+cpu time: 1031.3s
+Sim:1000000s / 11 × 24h
+****************************************
+2_th episode-11857:
+PSS Configuration(Non-RLTask)
+Strategy:Multi-sku, Storage:zoned
+arrival rate:100.0 orders/hour
+Shape:10×40×8, AVAIL PLACE:3200
+Robots:7 bp, 3 tc
+Finish rate: R:48.09%, 47.80%
+Current stocks status: stocks_rate: 44.97%, lock_rate: 0.50%
+Robots utility
+['PSB-0:21.68%', 'PSB-1:20.20%', 'PSB-2:20.66%', 'PSB-3:20.72%', 'PSB-4:20.44%', 'PSB-5:20.23%', 'PSB-6:20.32%']
+['PST-0:1.04%', 'PST-1:1.00%', 'PST-2:12.28%']
+Energy Consumption ↓ 
+R-jobs: 13271,  avg: 8.69 KJ,  min: 0.45 KJ, max: 23.99 KJ, var: 11.40 KJ^2, total: 115280.82 KJ
+S-jobs: 13030,  avg: 2.96 KJ, min: 0.32 KJ, max: 11.46 KJ, var: 2.77 KJ^2, total: 38582.22 KJ
+R: reshuffle:15831.97 KJ, general: 91311.95 KJ
+Total EC: 153863.03 KJ
+Reshuffle task: 22.91%, 2.08
+Time ↓ 
+R: mean waiting time:  249568.7s, mean working time: 108.7s, reshuffle_time part: 53.05%
+S: mean waiting time:  0.5s, mean working time: 46.7s
+Mean queue length: 0.0
+TryExcept in Stocks: {'forced-put': 63}
+Modified R orders: 0
+action: Counter({5: 12849, 11: 1612, 4: 1545, 2: 1104, 0: 1034, 7: 1031, 10: 1028, 3: 1001, 6: 984, 8: 962, 9: 426, 1: 172})
+cpu time: 1308.4s
+Sim:1000000s / 11 × 24h
+PSS Configuration(Non-RLTask)
+Strategy:Multi-sku, Storage:zoned
+arrival rate:100.0 orders/hour
+Shape:10×40×8, AVAIL PLACE:3200
+Robots:7 bp, 3 tc
+****************************************
+3_th episode-12239:
+Finish rate: R:47.91%, 48.65%
+Current stocks status: stocks_rate: 56.66%, lock_rate: 0.25%
+Robots utility
+['PSB-0:21.18%', 'PSB-1:20.68%', 'PSB-2:20.60%', 'PSB-3:19.94%', 'PSB-4:20.94%', 'PSB-5:21.10%', 'PSB-6:19.72%']
+['PST-0:1.01%', 'PST-1:1.02%', 'PST-2:12.01%']
+Energy Consumption ↓ 
+R-jobs: 13145,  avg: 8.64 KJ,  min: 0.45 KJ, max: 23.50 KJ, var: 11.89 KJ^2, total: 113565.81 KJ
+S-jobs: 13255,  avg: 2.87 KJ, min: 0.32 KJ, max: 10.91 KJ, var: 2.66 KJ^2, total: 38029.11 KJ
+R: reshuffle:16473.36 KJ, general: 89958.76 KJ
+Total EC: 151594.91 KJ
+Reshuffle task: 23.01%, 2.14
+Time ↓ 
+R: mean waiting time:  235043.2s, mean working time: 109.7s, reshuffle_time part: 53.69%
+S: mean waiting time:  0.4s, mean working time: 46.1s
+Mean queue length: 0.0
+TryExcept in Stocks: {'forced-put': 81}
+Modified R orders: 0
+action: Counter({5: 23514, 4: 62, 8: 50, 11: 45, 0: 28, 2: 27, 1: 23, 10: 23, 9: 21, 3: 21, 7: 20, 6: 17})
+cpu time: 1488.0s
+****************************************
+4_th episode-12298:
+Sim:1000000s / 11 × 24h
+PSS Configuration(Non-RLTask)
+Strategy:Multi-sku, Storage:zoned
+arrival rate:100.0 orders/hour
+Shape:10×40×8, AVAIL PLACE:3200
+Robots:7 bp, 3 tc
+Finish rate: R:47.41%, 47.86%
+Current stocks status: stocks_rate: 55.53%, lock_rate: 0.25%
+Robots utility
+['PSB-0:19.78%', 'PSB-1:20.41%', 'PSB-2:21.58%', 'PSB-3:19.59%', 'PSB-4:21.00%', 'PSB-5:19.69%', 'PSB-6:20.93%']
+['PST-0:1.02%', 'PST-1:0.96%', 'PST-2:12.23%']
+Energy Consumption ↓ 
+R-jobs: 13043,  avg: 8.73 KJ,  min: 0.45 KJ, max: 23.42 KJ, var: 11.64 KJ^2, total: 113873.43 KJ
+S-jobs: 13150,  avg: 2.94 KJ, min: 0.32 KJ, max: 11.46 KJ, var: 2.84 KJ^2, total: 38725.77 KJ
+R: reshuffle:16061.60 KJ, general: 90307.38 KJ
+Total EC: 152599.20 KJ
+Reshuffle task: 22.71%, 2.12
+Time ↓ 
+R: mean waiting time:  248247.7s, mean working time: 109.6s, reshuffle_time part: 53.22%
+S: mean waiting time:  0.4s, mean working time: 46.4s
+Mean queue length: 0.0
+TryExcept in Stocks: {'forced-put': 70}
+Modified R orders: 0
+action: Counter({4: 7896, 11: 4238, 5: 3104, 1: 2067, 8: 1843, 0: 1559, 3: 715, 6: 579, 10: 551, 9: 459, 7: 380, 2: 283})
+cpu time: 1221.8s
+****************************************
+5_th episode-12226:
+Sim:1000000s / 11 × 24h
+PSS Configuration(Non-RLTask)
+Strategy:Multi-sku, Storage:zoned
+arrival rate:100.0 orders/hour
+Shape:10×40×8, AVAIL PLACE:3200
+Robots:7 bp, 3 tc
+Finish rate: R:47.71%, 47.94%
+Current stocks status: stocks_rate: 58.84%, lock_rate: 0.25%
+Robots utility
+['PSB-0:20.88%', 'PSB-1:20.39%', 'PSB-2:21.21%', 'PSB-3:20.19%', 'PSB-4:20.51%', 'PSB-5:21.14%', 'PSB-6:19.79%']
+['PST-0:1.00%', 'PST-1:1.06%', 'PST-2:11.84%']
+Energy Consumption ↓ 
+R-jobs: 12992,  avg: 8.76 KJ,  min: 0.45 KJ, max: 24.96 KJ, var: 11.89 KJ^2, total: 113828.13 KJ
+S-jobs: 13262,  avg: 2.94 KJ, min: 0.32 KJ, max: 10.96 KJ, var: 2.95 KJ^2, total: 39046.54 KJ
+R: reshuffle:16891.62 KJ, general: 90416.69 KJ
+Total EC: 152874.68 KJ
+Reshuffle task: 23.91%, 2.08
+Time ↓ 
+R: mean waiting time:  251431.7s, mean working time: 110.9s, reshuffle_time part: 53.15%
+S: mean waiting time:  0.4s, mean working time: 46.4s
+Mean queue length: 0.0
+TryExcept in Stocks: {'forced-put': 138}
+Modified R orders: 0
+action: Counter({4: 7411, 5: 4882, 1: 1968, 11: 1944, 8: 1685, 6: 1421, 10: 912, 0: 855, 9: 798, 7: 664, 3: 604, 2: 513})
+cpu time: 1210.0s
+****************************************
+6_th episode-11484:
+Sim:1000000s / 11 × 24h
+PSS Configuration(Non-RLTask)
+Strategy:Multi-sku, Storage:zoned
+arrival rate:100.0 orders/hour
+Shape:10×40×8, AVAIL PLACE:3200
+Robots:7 bp, 3 tc
+Finish rate: R:48.63%, 47.62%
+Current stocks status: stocks_rate: 49.09%, lock_rate: 0.25%
+Robots utility
+['PSB-0:20.37%', 'PSB-1:19.81%', 'PSB-2:20.54%', 'PSB-3:20.08%', 'PSB-4:19.98%', 'PSB-5:21.21%', 'PSB-6:20.36%']
+['PST-0:1.01%', 'PST-1:1.06%', 'PST-2:12.30%']
+Energy Consumption ↓ 
+R-jobs: 13310,  avg: 8.63 KJ,  min: 0.45 KJ, max: 23.45 KJ, var: 11.50 KJ^2, total: 114893.05 KJ
+S-jobs: 13181,  avg: 2.99 KJ, min: 0.32 KJ, max: 10.94 KJ, var: 2.90 KJ^2, total: 39375.42 KJ
+R: reshuffle:15314.05 KJ, general: 90836.71 KJ
+Total EC: 154268.47 KJ
+Reshuffle task: 22.70%, 2.03
+Time ↓ 
+R: mean waiting time:  249944.8s, mean working time: 106.9s, reshuffle_time part: 52.54%
+S: mean waiting time:  0.4s, mean working time: 46.8s
+Mean queue length: 0.0
+TryExcept in Stocks: {'forced-put': 60}
+Modified R orders: 0
+action: Counter({4: 6249, 2: 3816, 9: 2687, 8: 2243, 5: 1821, 1: 1650, 11: 1577, 7: 1153, 0: 979, 3: 839, 6: 597, 10: 253})
+cpu time: 1158.5s
+Sim:1000000s / 11 × 24h
+PSS Configuration(Non-RLTask)
+Strategy:Multi-sku, Storage:zoned
+arrival rate:100.0 orders/hour
+Shape:10×40×8, AVAIL PLACE:3200
+Robots:7 bp, 3 tc
+Finish rate: R:48.85%, 48.12%
+Current stocks status: stocks_rate: 49.97%, lock_rate: 0.25%
+Robots utility
+['PSB-0:19.85%', 'PSB-1:19.65%', 'PSB-2:20.25%', 'PSB-3:19.69%', 'PSB-4:20.54%', 'PSB-5:20.66%', 'PSB-6:21.79%']
+****************************************
+7_th episode-11142:
+['PST-0:1.05%', 'PST-1:1.06%', 'PST-2:12.38%']
+Energy Consumption ↓ 
+R-jobs: 13396,  avg: 8.67 KJ,  min: 0.45 KJ, max: 22.69 KJ, var: 11.13 KJ^2, total: 116198.11 KJ
+S-jobs: 13325,  avg: 2.96 KJ, min: 0.32 KJ, max: 11.40 KJ, var: 2.93 KJ^2, total: 39469.78 KJ
+R: reshuffle:15577.51 KJ, general: 92071.90 KJ
+Total EC: 155667.89 KJ
+Reshuffle task: 22.69%, 2.00
+Time ↓ 
+R: mean waiting time:  252772.7s, mean working time: 106.3s, reshuffle_time part: 52.43%
+S: mean waiting time:  0.5s, mean working time: 46.6s
+Mean queue length: 0.0
+TryExcept in Stocks: {'forced-put': 103}
+Modified R orders: 0
+action: Counter({4: 5502, 6: 3504, 2: 3453, 8: 2689, 10: 1778, 7: 1579, 9: 1387, 11: 1289, 5: 873, 1: 782, 3: 779, 0: 478})
+cpu time: 1136.0s
+Sim:1000000s / 11 × 24h
+PSS Configuration(Non-RLTask)
+Strategy:Multi-sku, Storage:zoned
+arrival rate:100.0 orders/hour
+Shape:10×40×8, AVAIL PLACE:3200
+Robots:7 bp, 3 tc
+****************************************
+8_th episode-11628:
+Finish rate: R:48.15%, 47.99%
+Current stocks status: stocks_rate: 50.91%, lock_rate: 0.25%
+Robots utility
+['PSB-0:20.60%', 'PSB-1:22.10%', 'PSB-2:20.19%', 'PSB-3:19.87%', 'PSB-4:20.64%', 'PSB-5:20.88%', 'PSB-6:19.95%']
+['PST-0:1.04%', 'PST-1:1.03%', 'PST-2:12.48%']
+Energy Consumption ↓ 
+R-jobs: 13290,  avg: 8.74 KJ,  min: 0.45 KJ, max: 24.41 KJ, var: 11.33 KJ^2, total: 116159.31 KJ
+S-jobs: 13270,  avg: 2.98 KJ, min: 0.32 KJ, max: 11.06 KJ, var: 2.87 KJ^2, total: 39485.36 KJ
+R: reshuffle:16037.06 KJ, general: 92085.70 KJ
+Total EC: 155644.67 KJ
+Reshuffle task: 22.75%, 2.07
+Time ↓ 
+R: mean waiting time:  254396.2s, mean working time: 108.5s, reshuffle_time part: 53.05%
+S: mean waiting time:  0.4s, mean working time: 46.8s
+Mean queue length: 0.0
+TryExcept in Stocks: {'forced-put': 58}
+Modified R orders: 0
+action: Counter({6: 3710, 4: 3442, 8: 3228, 2: 3196, 5: 2986, 3: 1736, 11: 1721, 9: 1157, 7: 792, 1: 698, 0: 653, 10: 613})
+cpu time: 1545.1s
+****************************************
+Sim:1000000s / 11 × 24h
+PSS Configuration(Non-RLTask)
+Strategy:Multi-sku, Storage:zoned
+arrival rate:100.0 orders/hour
+Shape:10×40×8, AVAIL PLACE:3200
+Robots:7 bp, 3 tc
+9_th episode-12371:
+Finish rate: R:46.99%, 47.06%
+Current stocks status: stocks_rate: 56.78%, lock_rate: 0.75%
+Robots utility
+['PSB-0:21.43%', 'PSB-1:19.94%', 'PSB-2:20.58%', 'PSB-3:20.60%', 'PSB-4:20.09%', 'PSB-5:21.58%', 'PSB-6:19.89%']
+['PST-0:0.99%', 'PST-1:1.02%', 'PST-2:12.01%']
+Energy Consumption ↓ 
+R-jobs: 12946,  avg: 8.76 KJ,  min: 0.45 KJ, max: 25.42 KJ, var: 11.85 KJ^2, total: 113448.45 KJ
+S-jobs: 13033,  avg: 2.94 KJ, min: 0.32 KJ, max: 10.86 KJ, var: 2.72 KJ^2, total: 38366.40 KJ
+R: reshuffle:16430.38 KJ, general: 90095.22 KJ
+Total EC: 151814.85 KJ
+Reshuffle task: 22.94%, 2.15
+Time ↓ 
+R: mean waiting time:  250818.9s, mean working time: 111.3s, reshuffle_time part: 53.67%
+S: mean waiting time:  0.4s, mean working time: 46.5s
+Mean queue length: 0.0
+TryExcept in Stocks: {'forced-put': 54}
+Modified R orders: 0
+action: Counter({0: 3136, 4: 3036, 5: 2942, 3: 2694, 11: 2463, 8: 1872, 7: 1482, 10: 1376, 1: 1285, 2: 1274, 6: 1264, 9: 626})
+cpu time: 1186.0s
+Episode-10/20，reward：-12032
+****************************************
+10_th episode-12032:
+Sim:1000000s / 11 × 24h
+PSS Configuration(Non-RLTask)
+Strategy:Multi-sku, Storage:zoned
+arrival rate:100.0 orders/hour
+Shape:10×40×8, AVAIL PLACE:3200
+Robots:7 bp, 3 tc
+Finish rate: R:47.72%, 47.61%
+Current stocks status: stocks_rate: 51.12%, lock_rate: 0.00%
+Robots utility
+['PSB-0:20.83%', 'PSB-1:21.31%', 'PSB-2:20.59%', 'PSB-3:19.74%', 'PSB-4:21.38%', 'PSB-5:19.81%', 'PSB-6:20.60%']
+['PST-0:0.97%', 'PST-1:1.03%', 'PST-2:12.06%']
+Energy Consumption ↓ 
+R-jobs: 13109,  avg: 8.69 KJ,  min: 0.45 KJ, max: 23.61 KJ, var: 11.91 KJ^2, total: 113940.70 KJ
+S-jobs: 13060,  avg: 2.96 KJ, min: 0.32 KJ, max: 11.26 KJ, var: 2.87 KJ^2, total: 38643.02 KJ
+R: reshuffle:16365.19 KJ, general: 90650.47 KJ
+Total EC: 152583.72 KJ
+Reshuffle task: 23.31%, 2.10
+Time ↓ 
+R: mean waiting time:  249216.1s, mean working time: 110.1s, reshuffle_time part: 53.30%
+S: mean waiting time:  0.4s, mean working time: 46.6s
+Mean queue length: 0.0
+TryExcept in Stocks: {'forced-put': 80}
+Modified R orders: 0
+action: Counter({4: 3630, 10: 3139, 11: 3063, 0: 2941, 5: 1717, 1: 1621, 8: 1493, 6: 1473, 9: 1470, 7: 1330, 3: 979, 2: 753})
+cpu time: 1153.4s
+****************************************
+11_th episode-11527:
+Sim:1000000s / 11 × 24h
+PSS Configuration(Non-RLTask)
+Strategy:Multi-sku, Storage:zoned
+arrival rate:100.0 orders/hour
+Shape:10×40×8, AVAIL PLACE:3200
+Robots:7 bp, 3 tc
+Finish rate: R:48.15%, 48.06%
+Current stocks status: stocks_rate: 55.84%, lock_rate: 0.00%
+Robots utility
+['PSB-0:20.61%', 'PSB-1:20.24%', 'PSB-2:21.07%', 'PSB-3:20.45%', 'PSB-4:20.01%', 'PSB-5:19.88%', 'PSB-6:20.25%']
+['PST-0:1.01%', 'PST-1:1.04%', 'PST-2:12.15%']
+Energy Consumption ↓ 
+R-jobs: 13189,  avg: 8.63 KJ,  min: 0.45 KJ, max: 24.66 KJ, var: 11.61 KJ^2, total: 113768.40 KJ
+S-jobs: 13295,  avg: 2.93 KJ, min: 0.32 KJ, max: 11.73 KJ, var: 2.70 KJ^2, total: 38954.25 KJ
+R: reshuffle:15559.67 KJ, general: 90120.33 KJ
+Total EC: 152722.65 KJ
+Reshuffle task: 22.87%, 2.07
+Time ↓ 
+R: mean waiting time:  245008.7s, mean working time: 108.1s, reshuffle_time part: 52.83%
+S: mean waiting time:  0.4s, mean working time: 46.5s
+Mean queue length: 0.0
+TryExcept in Stocks: {'forced-put': 65}
+Modified R orders: 0
+action: Counter({11: 3335, 4: 2973, 5: 2911, 10: 2354, 0: 2215, 2: 1632, 6: 1597, 7: 1594, 9: 1499, 1: 1370, 8: 1297, 3: 1031})
+cpu time: 1192.4s
+****************************************
+12_th episode-11613:
+Sim:1000000s / 11 × 24h
+PSS Configuration(Non-RLTask)
+Strategy:Multi-sku, Storage:zoned
+arrival rate:100.0 orders/hour
+Shape:10×40×8, AVAIL PLACE:3200
+Robots:7 bp, 3 tc
+Finish rate: R:48.09%, 48.09%
+Current stocks status: stocks_rate: 48.09%, lock_rate: 0.25%
+Robots utility
+['PSB-0:20.83%', 'PSB-1:18.79%', 'PSB-2:20.53%', 'PSB-3:20.98%', 'PSB-4:20.67%', 'PSB-5:21.17%', 'PSB-6:20.85%']
+['PST-0:1.04%', 'PST-1:1.00%', 'PST-2:12.26%']
+Energy Consumption ↓ 
+R-jobs: 13274,  avg: 8.69 KJ,  min: 0.45 KJ, max: 22.02 KJ, var: 11.47 KJ^2, total: 115324.85 KJ
+S-jobs: 13115,  avg: 3.03 KJ, min: 0.32 KJ, max: 11.05 KJ, var: 2.93 KJ^2, total: 39673.76 KJ
+R: reshuffle:15626.87 KJ, general: 91613.11 KJ
+Total EC: 154998.61 KJ
+Reshuffle task: 22.86%, 2.05
+Time ↓ 
+R: mean waiting time:  251023.2s, mean working time: 108.3s, reshuffle_time part: 52.61%
+S: mean waiting time:  0.4s, mean working time: 47.2s
+Mean queue length: 0.0
+TryExcept in Stocks: {'forced-put': 29}
+Modified R orders: 0
+action: Counter({11: 3587, 4: 3125, 1: 2976, 5: 2691, 10: 2370, 7: 2262, 0: 1787, 2: 1663, 9: 1284, 8: 745, 6: 641, 3: 571})
+cpu time: 1341.7s
+****************************************
+13_th episode-12090:
+Sim:1000000s / 11 × 24h
+PSS Configuration(Non-RLTask)
+Strategy:Multi-sku, Storage:zoned
+arrival rate:100.0 orders/hour
+Shape:10×40×8, AVAIL PLACE:3200
+Robots:7 bp, 3 tc
+Finish rate: R:47.24%, 48.24%
+Current stocks status: stocks_rate: 58.69%, lock_rate: 0.50%
+Robots utility
+['PSB-0:21.25%', 'PSB-1:21.12%', 'PSB-2:20.45%', 'PSB-3:20.23%', 'PSB-4:20.78%', 'PSB-5:19.24%', 'PSB-6:20.27%']
+['PST-0:0.96%', 'PST-1:0.96%', 'PST-2:12.16%']
+Energy Consumption ↓ 
+R-jobs: 12953,  avg: 8.76 KJ,  min: 0.45 KJ, max: 25.42 KJ, var: 11.74 KJ^2, total: 113479.23 KJ
+S-jobs: 13176,  avg: 2.93 KJ, min: 0.32 KJ, max: 11.11 KJ, var: 2.75 KJ^2, total: 38597.68 KJ
+R: reshuffle:16313.48 KJ, general: 90272.66 KJ
+Total EC: 152076.91 KJ
+Reshuffle task: 23.05%, 2.12
+Time ↓ 
+R: mean waiting time:  250624.1s, mean working time: 110.7s, reshuffle_time part: 53.34%
+S: mean waiting time:  0.4s, mean working time: 46.4s
+Mean queue length: 0.0
+TryExcept in Stocks: {'forced-put': 118}
+Modified R orders: 0
+action: Counter({1: 3695, 5: 2719, 4: 2705, 11: 2592, 7: 2138, 0: 2116, 9: 1692, 10: 1553, 3: 1377, 2: 1248, 8: 1090, 6: 642})
+cpu time: 1676.0s
+Sim:1000000s / 11 × 24h
+PSS Configuration(Non-RLTask)
+Strategy:Multi-sku, Storage:zoned
+arrival rate:100.0 orders/hour
+Shape:10×40×8, AVAIL PLACE:3200
+Robots:7 bp, 3 tc
+Finish rate: R:47.83%, 47.47%
+Current stocks status: stocks_rate: 48.47%, lock_rate: 0.25%
+Robots utility
+['PSB-0:19.96%', 'PSB-1:20.72%', 'PSB-2:20.16%', 'PSB-3:21.21%', 'PSB-4:21.60%', 'PSB-5:19.94%', 'PSB-6:20.24%']
+['PST-0:1.03%', 'PST-1:1.01%', 'PST-2:12.22%']
+Energy Consumption ↓ 
+R-jobs: 13170,  avg: 8.73 KJ,  min: 0.45 KJ, max: 23.22 KJ, var: 11.40 KJ^2, total: 114931.52 KJ
+S-jobs: 12999,  avg: 3.02 KJ, min: 0.32 KJ, max: 10.94 KJ, var: 2.82 KJ^2, total: 39271.87 KJ
+R: reshuffle:15783.13 KJ, general: 91212.49 KJ
+Total EC: 154203.39 KJ
+Reshuffle task: 22.74%, 2.09
+Time ↓ 
+R: mean waiting time:  252102.8s, mean working time: 109.2s, reshuffle_time part: 53.09%
+S: mean waiting time:  0.4s, mean working time: 47.0s
+Mean queue length: 0.0
+TryExcept in Stocks: {'forced-put': 37}
+Modified R orders: 0
+action: Counter({8: 3278, 4: 3197, 5: 3066, 1: 2764, 2: 2510, 0: 1730, 11: 1582, 10: 1534, 3: 1411, 7: 1030, 9: 804, 6: 728})
+cpu time: 1679.1s
+****************************************
+14_th episode-11643:
+****************************************
+15_th episode-12014:
+Sim:1000000s / 11 × 24h
+PSS Configuration(Non-RLTask)
+Strategy:Multi-sku, Storage:zoned
+arrival rate:100.0 orders/hour
+Shape:10×40×8, AVAIL PLACE:3200
+Robots:7 bp, 3 tc
+Finish rate: R:48.32%, 48.12%
+Current stocks status: stocks_rate: 50.94%, lock_rate: 0.50%
+Robots utility
+['PSB-0:20.05%', 'PSB-1:20.42%', 'PSB-2:21.65%', 'PSB-3:21.28%', 'PSB-4:20.78%', 'PSB-5:20.71%', 'PSB-6:21.16%']
+['PST-0:1.03%', 'PST-1:1.05%', 'PST-2:12.27%']
+Energy Consumption ↓ 
+R-jobs: 13296,  avg: 8.69 KJ,  min: 0.45 KJ, max: 22.64 KJ, var: 11.72 KJ^2, total: 115605.34 KJ
+S-jobs: 13198,  avg: 3.01 KJ, min: 0.32 KJ, max: 10.90 KJ, var: 2.64 KJ^2, total: 39739.42 KJ
+R: reshuffle:15974.87 KJ, general: 91736.59 KJ
+Total EC: 155344.76 KJ
+Reshuffle task: 23.05%, 2.13
+Time ↓ 
+R: mean waiting time:  249663.5s, mean working time: 109.8s, reshuffle_time part: 53.28%
+S: mean waiting time:  0.4s, mean working time: 46.9s
+Mean queue length: 0.0
+TryExcept in Stocks: {'forced-put': 32}
+Modified R orders: 0
+action: Counter({4: 3566, 2: 2899, 5: 2702, 0: 2580, 3: 2173, 8: 1855, 10: 1819, 11: 1762, 1: 1523, 9: 1192, 7: 916, 6: 870})
+cpu time: 1599.8s
+****************************************
+16_th episode-10813:
+Sim:1000000s / 11 × 24h
+PSS Configuration(Non-RLTask)
+Strategy:Multi-sku, Storage:zoned
+arrival rate:100.0 orders/hour
+Shape:10×40×8, AVAIL PLACE:3200
+Robots:7 bp, 3 tc
+Finish rate: R:49.29%, 48.78%
+Current stocks status: stocks_rate: 42.16%, lock_rate: 0.25%
+Robots utility
+['PSB-0:20.97%', 'PSB-1:20.65%', 'PSB-2:20.07%', 'PSB-3:20.20%', 'PSB-4:20.83%', 'PSB-5:21.06%', 'PSB-6:20.10%']
+['PST-0:1.05%', 'PST-1:1.10%', 'PST-2:12.35%']
+Energy Consumption ↓ 
+R-jobs: 13555,  avg: 8.60 KJ,  min: 0.45 KJ, max: 24.46 KJ, var: 11.17 KJ^2, total: 116563.76 KJ
+S-jobs: 13230,  avg: 3.02 KJ, min: 0.32 KJ, max: 11.09 KJ, var: 2.83 KJ^2, total: 39977.65 KJ
+R: reshuffle:15082.49 KJ, general: 92337.73 KJ
+Total EC: 156541.41 KJ
+Reshuffle task: 22.58%, 2.02
+Time ↓ 
+R: mean waiting time:  244890.9s, mean working time: 106.1s, reshuffle_time part: 52.31%
+S: mean waiting time:  0.5s, mean working time: 47.2s
+Mean queue length: 0.0
+TryExcept in Stocks: {'forced-put': 42}
+Modified R orders: 0
+action: Counter({4: 4389, 0: 2941, 2: 2596, 3: 2469, 10: 2368, 5: 1999, 6: 1718, 8: 1711, 1: 1275, 11: 1047, 7: 858, 9: 677})
+cpu time: 1210.7s
+Sim:1000000s / 11 × 24h
+PSS Configuration(Non-RLTask)
+Strategy:Multi-sku, Storage:zoned
+arrival rate:100.0 orders/hour
+Shape:10×40×8, AVAIL PLACE:3200
+Robots:7 bp, 3 tc
+Finish rate: R:48.21%, 47.68%
+Current stocks status: stocks_rate: 51.31%, lock_rate: 0.75%
+Robots utility
+****************************************
+['PSB-0:20.29%', 'PSB-1:20.03%', 'PSB-2:20.25%', 'PSB-3:21.16%', 'PSB-4:20.23%', 'PSB-5:20.27%', 'PSB-6:20.35%']
+['PST-0:1.01%', 'PST-1:1.05%', 'PST-2:12.13%']
+17_th episode-11363:
+Energy Consumption ↓ 
+R-jobs: 13209,  avg: 8.69 KJ,  min: 0.45 KJ, max: 24.89 KJ, var: 11.72 KJ^2, total: 114748.33 KJ
+S-jobs: 13193,  avg: 2.96 KJ, min: 0.32 KJ, max: 11.20 KJ, var: 2.94 KJ^2, total: 39025.44 KJ
+R: reshuffle:16061.87 KJ, general: 91091.04 KJ
+Total EC: 153773.77 KJ
+Reshuffle task: 22.64%, 2.07
+Time ↓ 
+R: mean waiting time:  246586.5s, mean working time: 107.9s, reshuffle_time part: 52.85%
+S: mean waiting time:  0.4s, mean working time: 46.5s
+Mean queue length: 0.0
+TryExcept in Stocks: {'forced-put': 118}
+Modified R orders: 0
+action: Counter({4: 4881, 0: 3399, 2: 3195, 10: 2808, 5: 2666, 3: 1838, 6: 1269, 11: 1068, 7: 1018, 8: 740, 9: 399, 1: 337})
+cpu time: 1675.3s
+Sim:1000000s / 11 × 24h
+****************************************
+18_th episode-11471:
+PSS Configuration(Non-RLTask)
+Strategy:Multi-sku, Storage:zoned
+arrival rate:100.0 orders/hour
+Shape:10×40×8, AVAIL PLACE:3200
+Robots:7 bp, 3 tc
+Finish rate: R:48.54%, 48.18%
+Current stocks status: stocks_rate: 44.94%, lock_rate: 0.75%
+Robots utility
+['PSB-0:20.60%', 'PSB-1:21.28%', 'PSB-2:20.80%', 'PSB-3:20.49%', 'PSB-4:20.64%', 'PSB-5:20.43%', 'PSB-6:20.92%']
+['PST-0:0.98%', 'PST-1:1.08%', 'PST-2:12.35%']
+Energy Consumption ↓ 
+R-jobs: 13347,  avg: 8.72 KJ,  min: 0.45 KJ, max: 23.13 KJ, var: 11.32 KJ^2, total: 116444.42 KJ
+S-jobs: 13072,  avg: 3.00 KJ, min: 0.32 KJ, max: 11.32 KJ, var: 2.77 KJ^2, total: 39262.78 KJ
+R: reshuffle:15788.77 KJ, general: 92450.73 KJ
+Total EC: 155707.20 KJ
+Reshuffle task: 23.23%, 2.04
+Time ↓ 
+R: mean waiting time:  250481.9s, mean working time: 108.8s, reshuffle_time part: 52.62%
+S: mean waiting time:  0.4s, mean working time: 47.1s
+Mean queue length: 0.0
+TryExcept in Stocks: {'forced-put': 44}
+Modified R orders: 0
+action: Counter({4: 3550, 2: 3383, 10: 3354, 0: 2743, 5: 2529, 6: 2234, 3: 1598, 11: 1463, 9: 1272, 8: 645, 7: 638, 1: 412})
+cpu time: 1689.1s
+****************************************
+19_th episode-12015:
+Sim:1000000s / 11 × 24h
+PSS Configuration(Non-RLTask)
+Strategy:Multi-sku, Storage:zoned
+arrival rate:100.0 orders/hour
+Shape:10×40×8, AVAIL PLACE:3200
+Robots:7 bp, 3 tc
+Finish rate: R:48.13%, 48.46%
+Current stocks status: stocks_rate: 56.88%, lock_rate: 0.25%
+Robots utility
+['PSB-0:21.50%', 'PSB-1:20.65%', 'PSB-2:20.04%', 'PSB-3:20.29%', 'PSB-4:20.03%', 'PSB-5:21.03%', 'PSB-6:20.79%']
+['PST-0:1.00%', 'PST-1:1.04%', 'PST-2:12.05%']
+Energy Consumption ↓ 
+R-jobs: 13176,  avg: 8.71 KJ,  min: 0.45 KJ, max: 23.10 KJ, var: 11.78 KJ^2, total: 114749.41 KJ
+S-jobs: 13392,  avg: 2.93 KJ, min: 0.32 KJ, max: 10.94 KJ, var: 2.83 KJ^2, total: 39245.94 KJ
+R: reshuffle:16598.91 KJ, general: 91305.67 KJ
+Total EC: 153995.35 KJ
+Reshuffle task: 22.93%, 2.12
+Time ↓ 
+R: mean waiting time:  249220.1s, mean working time: 109.5s, reshuffle_time part: 53.51%
+S: mean waiting time:  0.5s, mean working time: 46.3s
+Mean queue length: 0.0
+TryExcept in Stocks: {'forced-put': 131}
+Modified R orders: 0
+action: Counter({4: 4034, 6: 3177, 5: 3173, 10: 2224, 11: 2159, 3: 1997, 2: 1978, 0: 1783, 9: 1194, 7: 935, 8: 709, 1: 543})
+cpu time: 1276.6s
+Sim:1000000s / 11 × 24h
+PSS Configuration(Non-RLTask)
+Episode-20/20，reward：-12708
+****************************************
+20_th episode-12708:
+Training finished！
+结果保存完毕！
+Strategy:Multi-sku, Storage:zoned
+arrival rate:100.0 orders/hour
+Shape:10×40×8, AVAIL PLACE:3200
+Robots:7 bp, 3 tc
+Finish rate: R:47.89%, 47.77%
+Current stocks status: stocks_rate: 54.00%, lock_rate: 0.25%
+Robots utility
+['PSB-0:20.94%', 'PSB-1:21.35%', 'PSB-2:21.54%', 'PSB-3:20.10%', 'PSB-4:20.87%', 'PSB-5:20.91%', 'PSB-6:20.61%']
+['PST-0:1.03%', 'PST-1:0.99%', 'PST-2:12.19%']
+Energy Consumption ↓ 
+R-jobs: 13118,  avg: 8.74 KJ,  min: 0.45 KJ, max: 24.38 KJ, var: 11.92 KJ^2, total: 114707.83 KJ
+S-jobs: 13128,  avg: 2.96 KJ, min: 0.32 KJ, max: 10.96 KJ, var: 2.78 KJ^2, total: 38922.70 KJ
+R: reshuffle:16643.76 KJ, general: 91170.03 KJ
+Total EC: 153630.53 KJ
+Reshuffle task: 23.48%, 2.16
+Time ↓ 
+R: mean waiting time:  251202.9s, mean working time: 111.5s, reshuffle_time part: 53.53%
+S: mean waiting time:  0.4s, mean working time: 46.6s
+Mean queue length: 0.0
+TryExcept in Stocks: {'forced-put': 47}
+Modified R orders: 0
+action: Counter({4: 3830, 10: 3104, 11: 2499, 5: 2485, 3: 2277, 2: 1909, 8: 1700, 9: 1630, 6: 1384, 0: 1251, 7: 979, 1: 620})
+cpu time: 1280.7s

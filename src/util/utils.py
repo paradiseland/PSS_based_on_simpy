@@ -9,6 +9,9 @@ date:2022/2/9 11:55
 
 # !/usr/bin/env python
 # coding=utf-8
+import pandas as pd
+import scipy.stats as st
+
 '''
 Author: John
 Email: johnjim0816@gmail.com
@@ -57,14 +60,14 @@ def plot_rewards_cn(rewards, ma_rewards, plot_cfg, tag='train'):
 def plot_rewards(rewards, ma_rewards, plot_cfg, tag='train'):
     sns.set()
     plt.figure()  # 创建一个图形实例，方便同时多画几个图
-    plt.title("learning curve on {} of {} for {}".format(
-        plot_cfg.device, plot_cfg.algo_name, plot_cfg.env_name))
-    plt.xlabel('epsiodes')
-    plt.plot(rewards, label='rewards')
-    plt.plot(ma_rewards, label='ma rewards')
+    # plt.title("learning curve on {} of {} for {}".format(
+        # plot_cfg.device, plot_cfg.algo_name, plot_cfg.env_name))
+    plt.xlabel('回合')
+    plt.plot(rewards, label='奖励')
+    plt.plot(ma_rewards, label='每10回合平均奖励')
     plt.legend()
     if plot_cfg.save:
-        plt.savefig(plot_cfg.result_path + "{}_rewards_curve".format(tag))
+        plt.savefig(plot_cfg.result_path + "{}_rewards_curve".format(tag), dpi=800)
     plt.show()
 
 
@@ -103,3 +106,12 @@ def del_empty_dir(*paths):
         for dir in dirs:
             if not os.listdir(os.path.join(path, dir)):
                 os.removedirs(os.path.join(path, dir))
+
+
+def get_ci_interval(array: pd.Series, ci=1):
+    mu = array.mean(axis=0)
+    std = array.std(axis=0)
+    tscore = st.t.ppf(1 - ci, array.shape[0] - 1)
+    lb = mu - (tscore * std / array.shape[0] ** 0.5)
+    ub = mu + (tscore * std / array.shape[0] ** 0.5)
+    return lb, ub

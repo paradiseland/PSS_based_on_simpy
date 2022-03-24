@@ -14,7 +14,7 @@ from ORCSRS.Config import *
 from util.run import timeit
 from Strategy.Storage import StoragePolicy
 
-np.random.seed(42)
+
 
 
 class StackError(BaseException):
@@ -58,6 +58,10 @@ class Stocks:
     @property
     def s_rate(self):
         return np.count_nonzero(self.s) / self.total_place
+
+    @property
+    def s_rates(self):
+        return [np.count_nonzero(i)/(self.total_place/NUM_OF_COLS) for i in self.s]
 
     @property
     def s_state(self):

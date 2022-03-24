@@ -10,7 +10,7 @@ import logging
 import random
 import time
 from typing import List, Generator, Any, Dict, TYPE_CHECKING
-
+from scipy import stats
 import numpy as np
 import pandas as pd
 import torch
@@ -33,7 +33,8 @@ from Warehouse.Stocks import Stocks
 from Warehouse.WorkStation import WorkStation
 
 np.set_printoptions(linewidth=400)
-random.seed(43)
+random.seed(RANDOM_SEED)
+np.random.seed(RANDOM_SEED)
 
 
 class Energy:
@@ -146,6 +147,9 @@ class PSS(Environment):
     def state(self) -> np.ndarray:
         """
         返回当前仿真环境内的状态信息, 并转为tensor
+        fleet_state: BP->(NUM_OF_COLS, 1), TC->(NUM_OF_COLS, 2) => (10, 1), (10, 2)
+        orders_state:
+        stocks_state:
         订单信息记录为 (sku_id, 1 为入库单 2为出库单,waiting time)
         :return:
         """
@@ -167,15 +171,15 @@ class PSS(Environment):
                             constant_values=(0, 0))
         orders = orders.reshape(
             (NUM_OF_COLS, int(order_pool_size / NUM_OF_COLS * 3)))
-        stocks = self.stocks.s.transpose(2, 0, 1)
-        state = np.hstack([np.hstack([fleet_state, orders]), np.hstack(stocks)])
+        # stocks = self.stocks.s.transpose(2, 0, 1)
+        # state = np.hstack([np.hstack([fleet_state, orders]), np.hstack(stocks)])
+        state = np.hstack([fleet_state, orders])
         return state.astype(np.float32)
 
     def rl_order_release(self):
         """
         when more than one BP available and order pool has orders, we will conduct a order release action.
         """
-        action = None
         step_idx = 0
         self.action = 6
         while True:
@@ -188,10 +192,6 @@ class PSS(Environment):
                 continue
             bp = random.choice(self.BP_fleet.all_PSBs)
             # 进入当前位置就是一个重要记录点[完成了一个订单], 记录环境的变化结果作为step结果
-            logging.log(45, f"RLTask step-[{step_idx}]")
-            new_state = self.state
-            # action = self.rl.agent.select_action(new_state)
-            # self.action = action
             order_entry, target_place = self.strategy['Scheduling'].select_order(bp)
             order_entry.d = target_place
             self.reward = self.compute_reward(bp, order_entry, target_place)
@@ -200,8 +200,12 @@ class PSS(Environment):
             bp = yield self.BP_fleet.get_bp_(bp.name)
             logging.log(10, f"{self.now: .3f}, BP{bp.ID} is bound to Order[{order_entry.name}]")
             order = self.retrieve(int(order_entry.name[1:]), sku_id=order_entry.sku_id, bp=bp, order_entry=order_entry,
-                                  target=target_place) \
-                if order_entry.type_ == OutboundOrderEntry.type_ else self.storage(int(order_entry.name[1:]), sku_id=order_entry.sku_id, bp=bp, order_entry=order_entry, target=target_place)  # 若是入库订单，则采用原先的默认随机方法
+                                  target=target_place, start_time=self.now) \
+                if order_entry.type_ == OutboundOrderEntry.type_ else self.storage(int(order_entry.name[1:]),
+                                                                                   sku_id=order_entry.sku_id, bp=bp,
+                                                                                   order_entry=order_entry,
+                                                                                   target=target_place,
+                                                                                   start_time=self.now)  # 若是入库订单，则采用原先的默认随机方法
             self.process(order)
             logging.log(10, self.stocks.value_counts)
 
@@ -271,6 +275,7 @@ class PSS(Environment):
             bp = kwargs['bp']
             x, y, tier = kwargs['target']
             outbound_order_name = o.name
+            o.start_time = kwargs['start_time']
         else:  # 非RL环境
             outbound_order_name = f"{OutboundOrderEntry.type_}{outbound_order_idx}"
             o = OutboundOrderEntry(name=outbound_order_name, sku_id=sku_id, arrive_time=self.now)
@@ -347,6 +352,8 @@ class PSS(Environment):
         o.end_stack = self.stocks.s[x, y]
         self.complete_event.succeed()
         self.complete_event = self.event()
+        if self.rl:
+            logging.log(50, f"[R] {self.stocks.s_rates}, {self.stocks.s_rate:.2%}")
 
     def storage(self, inbound_order_idx, sku_id, **kwargs):
         """
@@ -360,6 +367,7 @@ class PSS(Environment):
             x = kwargs['bp'].place[0]
             bp = kwargs['bp']
             x, y, z = kwargs['target']
+            o.start_time = kwargs['start_time']
         else:
             inbound_order_name = f"{InboundOrderEntry.type_}{inbound_order_idx}"
             # sku_id = self.strategy['Storage'].order_arrive(inbound=True) if NUM_OF_SKU > 1 else 1
@@ -410,6 +418,11 @@ class PSS(Environment):
         self.finish_order_index[o.type_].append(inbound_order_idx)
         self.complete_event.succeed()
         self.complete_event = self.event()
+        if self.rl:
+            logging.log(50, f"[S] {self.stocks.s_rates}, {self.stocks.s_rate:.2%}")
+            logging.log(50
+                        ,
+                        f"Robots utility\n{[f'{bp.name}:{bp.working_time / SIM_ELAPSE:.2%}' for bp in self.BP_fleet.all_PSBs]}\n{[f'{pst.name}:{pst.working_time / SIM_ELAPSE:.2%}' for pst in self.TC_fleet.all_PSTs]}")
 
     def __str__(self) -> str:
         return f"Warehouse Config: {NUM_OF_COLS} × {STACKS_OF_ONE_COL}, with {NUM_OF_PSBs} PSBs, {NUM_OF_PSTs} PSTs"
@@ -422,6 +435,9 @@ class PSS(Environment):
         print all the information of this simulation.
         :return: None
         """
+        logging.log(60, f"Sim:{SIM_ELAPSE}s / {SIM_ELAPSE // (3600 * 24)} × 24h")
+        logging.log(60,
+                    f"PSS Configuration({'RLTask activated' if RL_embedded else 'Non-RLTask'})\nStrategy:{'Single-sku' if NUM_OF_SKU == 1 else 'Multi-sku'}, Storage:{store_policy}\narrival rate:{ARRIVAL_RATE * 3600} orders/hour\nShape:{NUM_OF_COLS}×{STACKS_OF_ONE_COL}×{NUM_OF_TIERS}, AVAIL PLACE:{AVAIL_PLACE}\nRobots:{NUM_OF_PSBs} bp, {NUM_OF_PSTs} tc")
         EC_R, EC_S = self.EC.R_info(), self.EC.S_info()
         reshuffle_record_of_r = np.asarray([list(ro.ec.values()) for ro in self.order_record['R'].values()])
         logging.log(60
@@ -470,7 +486,7 @@ class PSS(Environment):
         # self.reshuffle_task.value_counts().sort_index().plot.bar()
         # print(f"Retrieval orders sku: {pd.Series(self.order_arrival['R']).value_counts()}")
         # print(f"Storage orders sku: {pd.Series(self.order_arrival['S']).value_counts()}")
-        if write_in:
+        if write_in or NUM_OF_REPLICATIONS > 1:
             df = pd.DataFrame(columns=result_cols)
             result = pd.Series(index=result_cols)
             result['sim time'] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
@@ -490,7 +506,8 @@ class PSS(Environment):
             result['SCEO(kJ)'] = f'{EC_S.mean:.2f}'
             result['TSEC(kJ)'] = f'{np.sum(self.EC.S_ndarray):.2f}'
             result['TEC(kJ)'] = f'{np.sum(self.EC.R_ndarray) + np.sum(self.EC.S_ndarray):.2f}'
-            result['U_{BP}'] = f'{sum([bp.working_time / SIM_ELAPSE for bp in self.BP_fleet.all_PSBs]) / NUM_OF_PSBs: .2%}'
+            result[
+                'U_{BP}'] = f'{sum([bp.working_time / SIM_ELAPSE for bp in self.BP_fleet.all_PSBs]) / NUM_OF_PSBs: .2%}'
             result[
                 'U_{TC}'] = f'{sum([pst.working_time / SIM_ELAPSE for pst in self.TC_fleet.all_PSTs]) / NUM_OF_PSTs: .2%}'
             result[
@@ -503,7 +520,8 @@ class PSS(Environment):
                 'Finish rate(S)'] = f'{len(self.finish_order_index[InboundOrderEntry.type_]) / self.arrive_order_index[InboundOrderEntry.type_]:.2%}'
             result['stocks rate'] = f'{self.stocks.s_rate:.2%}'
             result['lock rate'] = f'{1 - self.stocks.sync_.mean():.2%}'
-            result['BP utility'] = f"{[f'{bp.name}:{bp.working_time / SIM_ELAPSE:.2%}' for bp in self.BP_fleet.all_PSBs]}"
+            result[
+                'BP utility'] = f"{[f'{bp.name}:{bp.working_time / SIM_ELAPSE:.2%}' for bp in self.BP_fleet.all_PSBs]}"
             result[
                 'TC utility'] = f"{[f'{pst.name}:{pst.working_time / SIM_ELAPSE:.2%}' for pst in self.TC_fleet.all_PSTs]}"
             result['R jobs'] = EC_R.nobs
@@ -512,17 +530,25 @@ class PSS(Environment):
                 'Reshuffle time part'] = f"{np.asarray([ro.reshuffle_time / ro.executing_time for ro in self.order_record['R'].values() if ro.reshuffle > 0]).mean():.2%}"
             result['queue length'] = f'{self.queue[1] / self.queue[0]:.1f}'
             df = df.append(result, ignore_index=True)
-            df.to_csv(result_csv, mode='a', header=False, index=False)
+            if write_in:
+                df.to_csv(result_csv, mode='a', header=False, index=False)
+            else:
+                return df
+
 
     def compute_reward(self, bp: 'PSB', order: 'OrderEntry', target_place: tuple):
         x0, y0 = bp.place
         x, y, z = target_place
         stack_info = self.stocks.s[x, y]
-        reshuffle_tiers = np.count_nonzero(stack_info[z:]) - 1
+        if order.type_ == OutboundOrderEntry.type_:
+            reshuffle_tiers = np.count_nonzero(stack_info[z:]) - 1
+        else:
+            reshuffle_tiers = 0
         weighted_return = travel_length_weight * (abs(x0 - x) + abs(y0 - y)) + reshuffle_tiers_weight * (
             reshuffle_tiers) + change_track_weight * bool(x0 - x)
         logging.log(10, f"{self.now:>10.2f}, {order.name}, reward: {weighted_return}")
-        return weighted_return
+        # return weighted_return
+        return -reshuffle_tiers
 
     @property
     def action(self):
@@ -531,30 +557,34 @@ class PSS(Environment):
     @action.setter
     def action(self, v):
         self._action = v
-        logging.log(40, f"{self.now: >10.2f}, RLTask[D3QN]->action: {v}")
+        logging.log(40, f"{self.now: >10.2f}, RLTask[{algorithm}]->action: {v}")
 
 
 if __name__ == '__main__':
     import os
     import sys
+    res = pd.DataFrame(columns=result_cols)
+    for i in range(NUM_OF_REPLICATIONS):
+        t0 = time.time()
+        sys.path.append(
+            os.path.abspath(os.path.join(os.getcwd(), '/Users/cxw/Learn/2_SIGS/GraduateWork/Code/PSS_based_on_simpy')))
+        # logging.basicConfig(level=logging.WARNING, format='', filemode='a+', filename=without_change_track_log_file_path)
+        # logging.basicConfig(level=logging.WARNING, format='', filemode='a+', filename=change_track_log_file_path)
+        logging.basicConfig(level=log_level, format='')
+        # logging.disable(logging.CRITICAL)
+        pss = PSS()
+        pss.run(until=SIM_ELAPSE)
 
-    t0 = time.time()
-    sys.path.append(
-        os.path.abspath(os.path.join(os.getcwd(), '/Users/cxw/Learn/2_SIGS/GraduateWork/Code/PSS_based_on_simpy')))
-    # logging.basicConfig(level=logging.WARNING, format='', filemode='a+', filename=without_change_track_log_file_path)
-    # logging.basicConfig(level=logging.WARNING, format='', filemode='a+', filename=change_track_log_file_path)
-    logging.basicConfig(level=log_level, format='')
-    # logging.disable(logging.CRITICAL)
-    pss = PSS()
-    pss.run(until=SIM_ELAPSE)
+        logging.log(60, f"time: {pss.now:.2f}")
+        logging.log(60, time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
+        single_df = pss.print_stats()
+        print(pss.stocks.value_counts)
+        t1 = time.time()
+        logging.log(60,
+                    f'cpu time: {t1 - t0:.2f} s\n--------------------------------------------------------------------------')
+        res = res.append(single_df, ignore_index=True)
+    pd.set_option('display.max_columns', None)
+    res.to_csv(experiments_replication_csv, mode='a', header=False, index=False)
 
-    logging.log(60, f"time: {pss.now:.2f}")
-    logging.log(60, time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
-    logging.log(60, f"Sim:{SIM_ELAPSE}s / {SIM_ELAPSE // (3600 * 24)} × 24h")
-    logging.log(60,
-                f"PSS Configuration({'RLTask activated' if RL_embedded else 'Non-RLTask'})\nStrategy:{'Single-sku' if NUM_OF_SKU == 1 else 'Multi-sku'}, Storage:{store_policy}\narrival rate:{ARRIVAL_RATE * 3600} orders/hour\nShape:{NUM_OF_COLS}×{STACKS_OF_ONE_COL}×{NUM_OF_TIERS}, AVAIL PLACE:{AVAIL_PLACE}\nRobots:{NUM_OF_PSBs} bp, {NUM_OF_PSTs} tc")
-    pss.print_stats()
-    print(pss.stocks.value_counts)
-    t1 = time.time()
-    logging.log(60,
-                f'cpu time: {t1 - t0:.2f} s\n--------------------------------------------------------------------------')
+    print(res)
+

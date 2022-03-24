@@ -7,17 +7,17 @@ Email:cxw19@mails.tsinghua.edu.cn
 date:2022/2/9 11:54
 """
 
-import sys, os
+import os
+import sys
 import time
 
-from ORCSRS.ORSRSRL import RL
 from ORCSRS.Config import *
+from ORCSRS.ORSRSRL import RL
 
 curr_path = os.path.dirname(os.path.abspath(__file__))  # 当前文件所在绝对路径
 parent_path = os.path.dirname(curr_path)  # 父路径
 sys.path.append(parent_path)  # 添加路径到系统路径
 
-import gym
 import torch
 import datetime
 
@@ -32,7 +32,7 @@ class Config:
     def __init__(self):
         ################################## 环境超参数 ###################################
         self.algo_name = 'DoubleDQN'  # 算法名称
-        self.env_name = 'ORCSRSRL'  # 环境名称
+        self.env_name = 'ORCSRS-RL'  # 环境名称
         self.device = torch.device(
             "cuda" if torch.cuda.is_available() else "cpu")  # 检测GPU
         self.train_eps = 200  # 训练的回合数
@@ -40,7 +40,7 @@ class Config:
         ################################################################################
 
         ################################## 算法超参数 ###################################
-        self.gamma = 0.95  # 强化学习中的折扣因子
+        self.gamma = 0.97  # 强化学习中的折扣因子
         self.epsilon_start = 0.95  # e-greedy策略中初始epsilon
         self.epsilon_end = 0.01  # e-greedy策略中的终止epsilon
         self.epsilon_decay = 500  # e-greedy策略中epsilon的衰减率
@@ -60,7 +60,7 @@ class Config:
         ################################################################################
 
 
-def env_agent_config(cfg, seed=1):
+def env_agent_config(cfg, seed=RANDOM_SEED):
     # env = gym.make(cfg.env_name)
     env = RL()
     env.seed(seed)
@@ -70,7 +70,7 @@ def env_agent_config(cfg, seed=1):
     return env, agent
 
 
-def train(cfg, env, agent):
+def train(cfg: Config, env: RL, agent: DoubleDQN):
     print('Start training!')
     print(f'env：{cfg.env_name}, algorithm：{cfg.algo_name}, device：{cfg.device}.')
     rewards = []  # 记录所有回合的奖励
@@ -91,7 +91,7 @@ def train(cfg, env, agent):
         if i_ep % cfg.target_update == 0:
             agent.target_net.load_state_dict(agent.policy_net.state_dict())
         if (i_ep + 1) % 10 == 0:
-            print(f'回合：{i_ep + 1}/{cfg.train_eps}，奖励：{ep_reward}')
+            print(f'Episode-{i_ep + 1}/{cfg.train_eps}，reward：{ep_reward}')
         rewards.append(ep_reward)
         if ma_rewards:
             ma_rewards.append(
@@ -99,7 +99,7 @@ def train(cfg, env, agent):
         else:
             ma_rewards.append(ep_reward)
         t1 = time.time()
-        print(f"{'*' * 40}\n{i_ep + 1}_th episode:")
+        print(f"{'*' * 40}\n{i_ep + 1}_th episode{ep_reward}:")
         env.print_stats()
         logging.log(60, f'cpu time: {t1 - t0:.1f}s')
     print('Training finished！')
@@ -139,7 +139,7 @@ def test(cfg, env, agent):
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=50, format='')
+    logging.basicConfig(level=rl_log_level, format='')
     cfg = Config()
     # 训练
     env, agent = env_agent_config(cfg)
@@ -150,9 +150,9 @@ if __name__ == "__main__":
                  path=cfg.result_path)  # 保存结果
     plot_rewards(rewards, ma_rewards, cfg, tag="train")  # 画出结果
     # 测试
-    env, agent = env_agent_config(cfg)
-    agent.load(path=cfg.model_path)  # 导入模型
-    rewards, ma_rewards = test(cfg, env, agent)
-    save_results(rewards, ma_rewards, tag='test',
-                 path=cfg.result_path)  # 保存结果
-    plot_rewards(rewards, ma_rewards, cfg, tag="test")  # 画出结果
+    # env, agent = env_agent_config(cfg)
+    # agent.load(path=cfg.model_path)  # 导入模型
+    # rewards, ma_rewards = test(cfg, env, agent)
+    # save_results(rewards, ma_rewards, tag='test',
+    #              path=cfg.result_path)  # 保存结果
+    # plot_rewards(rewards, ma_rewards, cfg, tag="test")  # 画出结果

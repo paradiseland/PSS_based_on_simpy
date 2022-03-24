@@ -71,19 +71,19 @@ class StoragePolicy:
     def init_multi_sku_random_store(self):
         pss_sku = self.multi_sku_info()
         prob = pss_sku / pss_sku.sum()
-        modify_index = 7
-        prob2 = prob * 2
-        prob3 = prob2[:modify_index] / prob2[:modify_index].sum() * (1 - prob2[modify_index:].sum())
-        modified_prob = sorted(np.hstack([prob3, prob2[modify_index:]]), reverse=True)
+        # modify_index = 7
+        # prob2 = prob * 2
+        # prob3 = prob2[:modify_index] / prob2[:modify_index].sum() * (1 - prob2[modify_index:].sum())
+        # modified_prob = sorted(np.hstack([prob3, prob2[modify_index:]]), reverse=True)
         rand_int = np.random.normal(loc=WAREHOUSE_INIT_RATE * NUM_OF_TIERS, scale=2,
                                     size=(NUM_OF_COLS, STACKS_OF_ONE_COL)).astype(np.uint32)
         rand_int[rand_int > NUM_OF_TIERS] = NUM_OF_TIERS
         for i in range(NUM_OF_COLS):
             for j in range(STACKS_OF_ONE_COL):
                 for k in range(rand_int[i, j]):
-                    self.stocks.s[i, j, k] = np.random.choice(range(1, NUM_OF_SKU + 1), p=modified_prob)
+                    self.stocks.s[i, j, k] = np.random.choice(range(1, NUM_OF_SKU + 1), p=prob)
         self.other_class_sku_info = {i: [] for i in range(NUM_OF_SKU)}
-        return modified_prob
+        return prob
 
     def init_multi_sku_zoned_store(self) -> dict:
         """
@@ -229,7 +229,8 @@ class StoragePolicy:
         avail_y = np.argwhere((self.stocks.s_2d[x, avail_y] < NUM_OF_TIERS) & self.stocks.sync_[x, avail_y])
         avail_y_list = avail_y.tolist()
         assert len(avail_y_list) >= 1, f"[Error] StockError, No available storage place in line [{x}]."
-        y = avail_y_list[np.random.randint(len(avail_y_list) // 2)][0]
+
+        y = avail_y_list[np.random.randint(len(avail_y_list))][0]
         if self.policy != RANDOM:
             y += self.zoned_y[-1] + 1  # TODO:
         z = self.stocks.s_2d[x, y]
@@ -269,6 +270,7 @@ class StoragePolicy:
             another_line = np.random.choice(list(set(range(NUM_OF_COLS)) - x_not_available))
             return self.determined_store_to(sku_id, another_line, x_not_available)
         else:
+
             raise DedicatedStorageAreaFullException(f"sku-{sku_id} determined store area full")
 
     def random_retrieve(self, sku_id):
@@ -368,20 +370,21 @@ class StoragePolicy:
         :param inbound: whether a inbound task or not
         :return: sku id of this task.
         """
-        inbound = False
-        if inbound:
-            stock_info = self.stocks.value_counts
-            danger_sku = np.argwhere(stock_info < stock_threshold) + 1
-            if danger_sku.shape[0] > 0:  # random the dangerous sku
-                return np.random.choice(danger_sku.ravel())
-            elif self.policy == DETERMINED:  #
-                non_overflow_sku = (np.argwhere(((self.stack_qty * NUM_OF_TIERS) - stock_info) > 10) + 1).ravel()
-                return np.random.choice(non_overflow_sku.ravel(), p=self.sku_part[non_overflow_sku - 1] / (
-                    self.sku_part[non_overflow_sku - 1]).sum())
-            else:
-                return np.random.choice(a=np.arange(1, len(self.sku_part) + 1), p=self.sku_part)
-        else:
-            return np.random.choice(a=np.arange(1, len(self.sku_part) + 1), p=self.sku_part)
+        # inbound = False
+        # if inbound:
+        #     stock_info = self.stocks.value_counts
+        #     danger_sku = np.argwhere(stock_info < stock_threshold) + 1
+        #     if danger_sku.shape[0] > 0:  # random the dangerous sku
+        #         return np.random.choice(danger_sku.ravel())
+        #     elif self.policy == DETERMINED:  #
+        #         non_overflow_sku = (np.argwhere(((self.stack_qty * NUM_OF_TIERS) - stock_info) > 10) + 1).ravel()
+        #         return np.random.choice(non_overflow_sku.ravel(), p=self.sku_part[non_overflow_sku - 1] / (
+        #             self.sku_part[non_overflow_sku - 1]).sum())
+        #     else:
+        #         return np.random.choice(a=np.arange(1, len(self.sku_part) + 1), p=self.sku_part)
+        # else:
+        #     return np.random.choice(a=np.arange(1, len(self.sku_part) + 1), p=self.sku_part)
+        return np.random.choice(a=np.arange(1, len(self.sku_part) + 1), p=self.sku_part)
 
     def explore_another_lines(self, x_dir=True, rule_out=None):
         if rule_out is None:

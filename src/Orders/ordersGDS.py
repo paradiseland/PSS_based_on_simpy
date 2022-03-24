@@ -10,7 +10,7 @@ date:2021/11/6 08:50
 import numpy as np
 import pandas as pd
 
-from ORCSRS.Config import w_up, w_low
+from ORCSRS.Config import w_up, w_low, RANDOM_SEED
 from Orders.OrderEntry import OrderLine
 
 
@@ -37,7 +37,7 @@ def bucket(sku_qty=50, weight_low=w_low, weight_up=w_up) -> pd.CategoricalDtype:
 
 def random_orders(df_bin):
     from numpy.random import default_rng
-    g = default_rng(seed=42)
+    g = default_rng(seed=RANDOM_SEED)
     while True:
         sku_id = g.choice(df_bin)
         # yield sku_id

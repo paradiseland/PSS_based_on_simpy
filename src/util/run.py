@@ -18,6 +18,5 @@ def timeit(func):
         res = func(*args, **kwargs)
         logging.log(30, f"{func.__name__}, {time.time() - local_time:.5f}s")
         return res
-
     return wrapper
 

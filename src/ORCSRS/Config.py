@@ -10,6 +10,8 @@ import numpy as np
 import logging
 
 # constants
+RANDOM_SEED = 42
+NUM_OF_REPLICATIONS = 10
 RANDOM = 'random'
 ZONED = 'zoned'
 zoned_coe = 1.5
@@ -18,18 +20,18 @@ MIXED = 'mixed'
 TOP_FIRST = 'top_first'  # 订单命中的策略
 ONE_SKU, MULTI_SKU = 'single-sku', 'multi-sku'
 DETERMINED = 'determined'
-EPSILON = 0.1
 
 # log config
 without_change_track_log_file_path = '../Result/1l1psb3200.log'
 change_track_log_file_path = '../Result/mull1psb3200.log'
 result_csv = '../Result/result.csv'
+experiments_replication_csv = '../Result/exp_rep.csv'
 
 # Simulation
 ARRIVAL_RATE = 100 / 3600  # Modified by Xingwei Chen 2021/7/25 16:14
 EXPOVARIATE_ARRIVE = 'expovariate_arrive'
 SIM_ELAPSE = 1000000
-SIM_ELAPSE_RL = 100000
+SIM_ELAPSE_RL = 500000
 # Warehouse
 NUM_OF_COLS = 10
 STACKS_OF_ONE_COL = 40
@@ -38,7 +40,7 @@ WAREHOUSE_INIT_RATE = 0.5
 AVAIL_PLACE = NUM_OF_COLS * STACKS_OF_ONE_COL * NUM_OF_TIERS
 
 # Robots
-NUM_OF_PSBs = 5
+NUM_OF_PSBs = 7
 NUM_OF_PSTs_left = 2
 NUM_OF_PSTs_right = 1
 NUM_OF_PSTs = NUM_OF_PSTs_left + NUM_OF_PSTs_right
@@ -56,11 +58,11 @@ w_low = 0
 
 # Write
 write_in = False  # write in Result.csv
-log_level = 10  # print log content to console
+log_level = 60  # print log content to console
 # Storage policy
 # store_policy = 'determined'
+store_policy = 'zoned'
 # store_policy = 'zoned'
-store_policy = 'random'
 
 result_cols = [
     'sim time', 'N_{sku}', 'sku strategy', 'storage policy', 'lambda', 'shape', 'N_{stack}', 'N_{BP}', 'N_{TC}',
@@ -71,13 +73,15 @@ result_cols = [
 
 # RLTask
 # order pool refresh time
-RL_embedded = True
+algorithm = 'D2QN'
+rl_log_level = 60
+RL_embedded = False
 order_pool_time_interval = 3600  # s
 order_pool_size = 100
 NUM_OF_SCHEDULING_STRATEGIES = 5
 # STATE_DIM = int(4 + order_pool_size * 3 / NUM_OF_COLS + NUM_OF_TIERS * STACKS_OF_ONE_COL)
-STATE_DIM = AVAIL_PLACE + order_pool_size * 3 + NUM_OF_COLS * 4
-ACTION_DIM = 6
+STATE_DIM = 0 + order_pool_size * 3 + NUM_OF_COLS * 4
+ACTION_DIM = 12
 
 # reward
 reshuffle_tiers_weight = -10

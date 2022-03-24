@@ -11,7 +11,8 @@ from functools import lru_cache
 from typing import Optional, Tuple, Union, Any
 
 from ORCSRS.Config import *
-from ORCSRS.PSSTechInfo import PSBDemo, inertial_force_coefficient, gravity_coefficient, friction_coefficient, eta, Bin_weight, StackDemo, time_load_or_unload
+from ORCSRS.PSSTechInfo import PSBDemo, inertial_force_coefficient, gravity_coefficient, friction_coefficient, eta, \
+    Bin_weight, StackDemo, time_load_or_unload
 from Warehouse.Stocks import Stocks
 
 # F_c = G/g•a•f_r + G•c_r
@@ -21,22 +22,28 @@ logger = logging.getLogger(__name__)
 
 @lru_cache(10)
 def power_of_horizontal_acceleration_unloaded(v_top):
-    return (PSBDemo.weight * PSBDemo.acc_h_unloaded * inertial_force_coefficient + PSBDemo.weight * gravity_coefficient * friction_coefficient) * v_top / (1000 * eta)  # 0.77904
+    return (
+                   PSBDemo.weight * PSBDemo.acc_h_unloaded * inertial_force_coefficient + PSBDemo.weight * gravity_coefficient * friction_coefficient) * v_top / (
+                   1000 * eta)  # 0.77904
 
 
 @lru_cache(10)
 def power_of_horizontal_acceleration_loaded(v_top) -> float:
-    return ((PSBDemo.weight + Bin_weight) * PSBDemo.acc_h_loaded * inertial_force_coefficient + (PSBDemo.weight + Bin_weight) * gravity_coefficient * friction_coefficient) * v_top / (1000 * eta)
+    return ((PSBDemo.weight + Bin_weight) * PSBDemo.acc_h_loaded * inertial_force_coefficient + (
+            PSBDemo.weight + Bin_weight) * gravity_coefficient * friction_coefficient) * v_top / (1000 * eta)
 
 
 @lru_cache(10)
 def power_of_horizontal_deceleration_unloaded(v_top) -> float:
-    return (PSBDemo.weight * PSBDemo.acc_h_unloaded * inertial_force_coefficient - PSBDemo.weight * gravity_coefficient * friction_coefficient) * v_top / (1000 * eta)
+    return (
+                   PSBDemo.weight * PSBDemo.acc_h_unloaded * inertial_force_coefficient - PSBDemo.weight * gravity_coefficient * friction_coefficient) * v_top / (
+                   1000 * eta)
 
 
 @lru_cache(10)
 def power_of_horizontal_deceleration_loaded(v_top) -> float:
-    return ((PSBDemo.weight + Bin_weight) * PSBDemo.acc_h_loaded * inertial_force_coefficient - (PSBDemo.weight + Bin_weight) * gravity_coefficient * friction_coefficient) * v_top / (1000 * eta)
+    return ((PSBDemo.weight + Bin_weight) * PSBDemo.acc_h_loaded * inertial_force_coefficient - (
+            PSBDemo.weight + Bin_weight) * gravity_coefficient * friction_coefficient) * v_top / (1000 * eta)
 
 
 @lru_cache(10)
@@ -51,24 +58,30 @@ def power_of_horizontal_constant_loaded(v_max) -> float:
 
 @lru_cache(10)
 def power_of_vertical_acceleration_unloaded(v_top) -> float:
-    return (PSBDemo.weight * PSBDemo.acc_v_unloaded * inertial_force_coefficient + PSBDemo.weight * gravity_coefficient * friction_coefficient) * v_top / (1000 * eta)  # 0.77904
+    return (
+                   PSBDemo.weight * PSBDemo.acc_v_unloaded * inertial_force_coefficient + PSBDemo.weight * gravity_coefficient * friction_coefficient) * v_top / (
+                   1000 * eta)  # 0.77904
 
 
 @lru_cache(10)
 def power_of_vertical_acceleration_loaded(v_top) -> float:
-    return ((PSBDemo.weight + Bin_weight) * PSBDemo.acc_v_unloaded * inertial_force_coefficient + (PSBDemo.weight + Bin_weight) * gravity_coefficient * friction_coefficient) * v_top / (
-            1000 * eta)  # 0.77904
+    return ((PSBDemo.weight + Bin_weight) * PSBDemo.acc_v_unloaded * inertial_force_coefficient + (
+            PSBDemo.weight + Bin_weight) * gravity_coefficient * friction_coefficient) * v_top / (
+                   1000 * eta)  # 0.77904
 
 
 @lru_cache(10)
 def power_of_vertical_deceleration_unloaded(v_top) -> float:
-    return (PSBDemo.weight * PSBDemo.acc_v_unloaded * inertial_force_coefficient + PSBDemo.weight * gravity_coefficient * friction_coefficient) * v_top / (1000 * eta)  # 0.77904
+    return (
+                   PSBDemo.weight * PSBDemo.acc_v_unloaded * inertial_force_coefficient + PSBDemo.weight * gravity_coefficient * friction_coefficient) * v_top / (
+                   1000 * eta)  # 0.77904
 
 
 @lru_cache(10)
 def power_of_vertical_deceleration_loaded(v_top) -> float:
-    return ((PSBDemo.weight + Bin_weight) * PSBDemo.acc_v_unloaded * inertial_force_coefficient + (PSBDemo.weight + Bin_weight) * gravity_coefficient * friction_coefficient) * v_top / (
-            1000 * eta)  # 0.77904
+    return ((PSBDemo.weight + Bin_weight) * PSBDemo.acc_v_unloaded * inertial_force_coefficient + (
+            PSBDemo.weight + Bin_weight) * gravity_coefficient * friction_coefficient) * v_top / (
+                   1000 * eta)  # 0.77904
 
 
 @lru_cache(10)
@@ -141,7 +154,8 @@ class PSB:
         :param is_loaded: whether carrying load or not
         :return 返回水平方向前往目的地的时间
         """
-        accelerate_time, stable_move_time, time_cur_place2target = self.get_horizontal_transport_time_and_ec(abs(target[1] - self.place[1]) * StackDemo.length, is_loaded)
+        accelerate_time, stable_move_time, time_cur_place2target = self.get_horizontal_transport_time_and_ec(
+            abs(target[1] - self.place[1]) * StackDemo.length, is_loaded)
         return time_cur_place2target
 
     def get_horizontal_transport_time_and_ec(self, dis: int, is_loaded=False, is_reshuffle=False):
@@ -183,7 +197,8 @@ class PSB:
         else:
             return PSBDemo.setup_of_catchup + (NUM_OF_TIERS - tier) * PSBDemo.vertical_move_coefficient
 
-    def get_vertical_transport_time_ACC(self, tier: int, drop_off=True, is_reshuffle=False) -> Tuple[float, float, float]:
+    def get_vertical_transport_time_ACC(self, tier: int, drop_off=True, is_reshuffle=False) -> Tuple[
+        float, float, float]:
         """
         默认当前为顶层
         :param tier: 目标层数
@@ -227,7 +242,9 @@ class PSB:
         :param new_tier 目的点的层数
         """
         down_up_to_peek = self.get_vertical_transport_time_JC(pre_tier, drop_off=False, is_reshuffle=True)
-        horizon_to_back_adjacent = self.get_horizontal_transport_time_and_ec((abs(pre_y - new_y)) * StackDemo.length, is_reshuffle=True)[-1] * 2  # 水平移动时间, 包括回程时间
+        horizon_to_back_adjacent = \
+            self.get_horizontal_transport_time_and_ec((abs(pre_y - new_y)) * StackDemo.length, is_reshuffle=True)[
+                -1] * 2  # 水平移动时间, 包括回程时间
         drop_off_up = self.get_vertical_transport_time_JC(new_tier, drop_off=True, is_reshuffle=True)
         total_time = down_up_to_peek + horizon_to_back_adjacent + drop_off_up + time_load_or_unload * 2
         self.cur_order.reshuffle_time += total_time
@@ -297,15 +314,18 @@ class PSB:
             if next_bin < NUM_OF_TIERS - 1:
                 # self.register_reshuffle(adjacent_stacks[adjacent_placDe_chosen])
                 time_of_reshuffle_blocking_bins += self.reshuffle_bin_to_destination(
-                        y, cur_bin, adjacent_stacks[adjacent_place_chosen], next_bin)
+                    y, cur_bin, adjacent_stacks[adjacent_place_chosen], next_bin)
                 try:
                     reshuffled_sku_id = this_stack[cur_bin]
                     warehouse.stocks.R(x, y, cur_bin, is_R=False)
-                    warehouse.stocks.S(x, adjacent_stacks[adjacent_place_chosen], reshuffled_sku_id, next_bin, is_S=False)
+                    warehouse.stocks.S(x, adjacent_stacks[adjacent_place_chosen], reshuffled_sku_id, next_bin,
+                                       is_S=False)
                 except AssertionError:
                     print("出入库失败")
             if np.count_nonzero(next_stack) >= NUM_OF_TIERS - 1:
                 adjacent_place_chosen += 1
+                if adjacent_place_chosen < 0 or adjacent_place_chosen > STACKS_OF_ONE_COL - 2:
+                    raise ValueError(f"ERROR, not enough  place ({40 - adjacent_place_chosen} left)for  reshuffling. x,y:[{xy}, {tier}] \n {warehouse.stocks.s_rates}")
                 next_stack = warehouse.stocks.s[x, adjacent_stacks[adjacent_place_chosen]].view()
         return adjacent_stacks[adjacent_place_chosen], time_of_reshuffle_blocking_bins
 

@@ -50,8 +50,8 @@ class OrderPool:
         :param t:
         :return:
         """
-        sorted_order = sorted(self.items.values(), key=lambda o: -o.has_waiting_since(t))
-        return sorted_order[:x]
+        # sorted_order = sorted(self.items.values(), key=lambda o: -o.has_waiting_since(t))
+        return list(self.items.values())[:x]
 
     def __len__(self):
         return len(self.items)
